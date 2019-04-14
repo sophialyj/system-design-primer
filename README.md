@@ -768,10 +768,10 @@ A relational database like SQL is a collection of data items organized in tables
 
 **Database transaction**
 A unit of work performed within a database management system against a database, sometimes made up of multiple operations.
-##### Two purposes
+#### Two purposes
 * Allow correct recovery from failures and keep a database consistent even in cases of system failure
 * To provide isolation between programs accessing a database concurrently. 
-##### Steps
+#### Steps
 * Begin the transaction
 * Execute a set of data manipulations and/or queries
 * If no errors occur then commit the transaction and end it
@@ -843,7 +843,7 @@ Both masters serve reads and writes and coordinate with each other on writes.  I
   <i><a href=https://www.youtube.com/watch?v=w95murBkYmU>Source: Scaling up to your first 10 million users</a></i>
 </p>
 
-Federation (or functional partitioning) splits up databases by function.  For example, instead of a single, monolithic database, you could have three databases: **forums**, **users**, and **products**, resulting in less read and write traffic to each database and therefore less replication lag.  Smaller databases result in more data that can fit in memory, which in turn results in more cache hits due to improved cache locality.  With no single central master serializing writes you can write in parallel, increasing throughput.
+Federation (or functional partitioning) splits up databases by function.  For example, instead of a single, monolithic database, you could have three databases: **forums**, **users**, and **products**, resulting in **less read and write traffic to each database** and therefore less replication lag.  Smaller databases result in more data that can fit in memory, which in turn results in more cache hits due to improved cache locality.  With no single central master serializing writes you can write in parallel, increasing throughput.
 
 ##### Disadvantage(s): federation
 
@@ -864,19 +864,52 @@ Federation (or functional partitioning) splits up databases by function.  For ex
   <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
 </p>
 
-Sharding distributes data across different databases such that each database can only manage a subset of the data.  Taking a users database as an example, as the number of users increases, more shards are added to the cluster.
+A database shard is a horizontal partition of data in a database or search engine. Each shard is held on a separate database server instance, to spread load. A database shard can be placed on separate hardware, and multiple shards can be placed on multiple machines. 
 
-Similar to the advantages of [federation](#federation), sharding results in less read and write traffic, less replication, and more cache hits.  Index size is also reduced, which generally improves performance with faster queries.  If one shard goes down, the other shards are still operational, although you'll want to add some form of replication to avoid data loss.  Like federation, there is no single central master serializing writes, allowing you to write in parallel with increased throughput.
+Sharding distributes data across different databases such that each database can only manage **a subset of the data**.  Taking a users database as an example, as the number of users increases, more shards are added to the cluster.
+
+Similar to the advantages of [federation](#federation), sharding results in **less read and write traffic**, less replication, and more cache hits.  Index size is also reduced, which generally improves performance with faster queries.  If one shard goes down, the other shards are still operational, although you'll want to add some form of replication to avoid data loss.  Like federation, there is no single central master serializing writes, allowing you to write in parallel with increased throughput.
 
 Common ways to shard a table of users is either through the user's last name initial or the user's geographic location.
+* Verical partitioning:  A simple way to segment your application database is to move tables related to specific features to their own server. 
+* Range Based Partitioning: For example, splitting up sales transactions by what year they were created or assigning users to servers based on the first digit of their zip code.
+* Key or Hash Based Partitioning. Simplistic example is to consider if you have ten database servers and your user IDs were a numeric value that was incremented by 1 each time a new user is added. In this example, the hash function could be perform a modulo operation on the user ID with the number ten and then pick a database server based on the remainder value.
+* Directory Based Partitioning: A loosely couples approach to this problem is to create a lookup service which knows your current partitioning scheme and abstracts it away from the database access code.
+
+##### Advantage(s)
+* High availability. If one box goes down the others still operate.
+* Faster queries. Smaller amounts of data in each user group mean faster querying.
+* More write bandwidth. With no master database serializing writes you can write in parallel which increases your write throughput. Writing is major bottleneck for many websites.
+* You can do more work. A parallel backend means you can do more work simultaneously. You can handle higher user loads, especially when writing data, because there are parallel paths through your system. You can load balance web servers, which access shards over different network paths, which are processed by separate CPUs, which use separate caches of RAM and separate disk IO paths to process work. Very few bottlenecks limit your work.
+* Data are kept small. By isolating data into smaller shards the data you are accessing is more likely to stay in cache. 
+* Data are more highly available. You can also setup a shard to have a master-slave or dual master relationship within the shard to avoid a single point of failure within the shard. 
 
 ##### Disadvantage(s): sharding
 
-* You'll need to update your application logic to work with shards, which could result in complex SQL queries.
+* You'll need to update your application logic to work with shards, which could result in complex SQL queries. Operational issues become more difficult (backing up, adding indexes, changing schema).
 * Data distribution can become lopsided in a shard.  For example, a set of power users on a shard could result in increased load to that shard compared to others.
     * Rebalancing adds additional complexity.  A sharding function based on [consistent hashing](http://www.paperplanes.de/2011/12/9/the-magic-of-consistent-hashing.html) can reduce the amount of transferred data.
-* Joining data from multiple shards is more complex.
+* Increased latency when query, especially where more than on shard mus be searched.
+* Joining data from multiple shards is more complex. Certain searches might be revery slow or impossible.
+To create a complex friends page, or a user profile page, or a thread discussion page, you usually must pull together lots of different data from many different sources. With sharding you can't just issue a query and get back all the data. You have to make individual requests to your data sources, get all the responses, and the build the page. Thankfully, because of caching and fast networks this process is usually fast enough that your page load times can be excellent.
 * Sharding adds more hardware and additional complexity.
+* Issues of consistency and durability due to the more complex failure modes of a set of servers, which often result in systems making no guarantees about cross-shard consistency or durability.
+* **Rebalancing data**. Some user has a particularly large friends list that blows your storage capacity for the shard. You need to move the user to a different shard. Moving data from shard to shard required a lot of downtime. Rebalancing has to be built in from the start. Google's shards automatically rebalance.
+
+
+##### Consistent Hashing
+Here you have a number of nodes in a cluster of databases, or in a cluster of web caches. How do you figure out where the data for a particular key goes in that cluster -- consistent hashing. The same key will always return the same hash code.
+* Easier to avoid hotspots. e.g. Assume a key is based on the our of the day. And evening hours are usually the busiest time of the day, without consistent hashing, all the load goes to the single node that carries all the relevant data. But when you determine the location in the cluster based solely on the hash of the key, chances are much higher that two keys lexicographically close to each other end up on different nodes. Thus, the load is shared more evenly. The disadvantage is that you lose the order of keys.
+There are partitioning schemes that can work around this, even with a range-based key location. HBase (and Google's BigTable, for that matter) stores ranges of data in separate tablets. As tablets grow beyond their maximum size, they're split up and the remaining parts re-distributed. The advantage of this is that the original range is kept, even as you scale up.
+* Enable partitioning
+A hash function has a maximum result set, a SHA-1 function has a bit space of 2^160. You do the math. Instead of picking a random key, a node could choose from a fixed set of partitions. The number of partitions is picked up front, and practically never changes over the lifetime of the cluster. Partitioning makes scaling up and down more predictable.
+Going back to HBase, it cares for keys and the size of the tablet the data is stored in, as it breaks up tablets once they reach a threshold. Breaking up and reassigning a tablet requires coordination, which is not an easy thing to do in a distributed system.
+* Consistent hashing and partitioning makes relicating data across several nodes a lot easier. 
+With a fixed set of partitions, a new node can just pick the ones it's responsible for, and another stack of partitions it's going to be a replica for. The beauty of consistent hashing is that there doesn't need to be master for any piece of data. Every node is simply a replica of a number of partitions.
+* Replication reduces hotspots. 
+Having more than one replica of a single piece of data means you can spread out the request load even more. With that, consistent hashing enables a pretty linear increase in capacity as you add more nodes to a cluster.
+* Enables scalability and availability
+
 
 ##### Source(s) and further reading: sharding
 
