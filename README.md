@@ -766,18 +766,29 @@ Systems such as [Consul](https://www.consul.io/docs/index.html), [Etcd](https://
 
 A relational database like SQL is a collection of data items organized in tables.
 
+**Database transaction**
+A unit of work performed within a database management system against a database, sometimes made up of multiple operations.
+##### Two purposes
+* Allow correct recovery from failures and keep a database consistent even in cases of system failure
+* To provide isolation between programs accessing a database concurrently. 
+##### Steps
+* Begin the transaction
+* Execute a set of data manipulations and/or queries
+* If no errors occur then commit the transaction and end it
+* If errors occur then roll back the transaction and end it
+
 **ACID** is a set of properties of relational database [transactions](https://en.wikipedia.org/wiki/Database_transaction).
 
-* **Atomicity** - Each transaction is all or nothing
+* **Atomicity** - Each transaction is all or nothing, must either complete entirely or have no effect
 * **Consistency** - Any transaction will bring the database from one valid state to another
 * **Isolation** - Executing transactions concurrently has the same results as if the transactions were executed serially
-* **Durability** - Once a transaction has been committed, it will remain so
+* **Durability** - Transactions that complete successfully must get written to durable storage.
 
 There are many techniques to scale a relational database: **master-slave replication**, **master-master replication**, **federation**, **sharding**, **denormalization**, and **SQL tuning**.
 
 #### Master-slave replication
 
-The master serves reads and writes, replicating writes to one or more slaves, which serve only reads.  Slaves can also replicate to additional slaves in a tree-like fashion.  If the master goes offline, the system can continue to operate in read-only mode until a slave is promoted to a master or a new master is provisioned.
+The master serves reads and writes, replicating writes to one or more slaves, which serve only reads.  Slaves can also replicate to additional slaves in a tree-like fashion.  If the master goes offline, the system can continue to operate in read-only mode until a slave is promoted to a master or a new master is provisioned. Allowing only a single master makes it easier to achieve consistency among the members of the group, but is less flexible than multi-master replication.
 
 <p align="center">
   <img src="http://i.imgur.com/C9ioGtn.png">
@@ -800,10 +811,14 @@ Both masters serve reads and writes and coordinate with each other on writes.  I
   <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
 </p>
 
+##### Advantage(s)
+* If one master fails, other masters continue to update the database.
+* Masters can be located in several physical sites, i.e. distributed across the network.
+
 ##### Disadvantage(s): master-master replication
 
 * You'll need a load balancer or you'll need to make changes to your application logic to determine where to write.
-* Most master-master systems are either loosely consistent (violating ACID) or have increased write latency due to synchronization.
+* Most master-master systems are either loosely consistent (violating ACID) or have increased write latency due to synchronization. The multi-master replication system is responsible for propagating the data modifications made by each member to the rest of the group, and resolving any conflicts that might arise between concurrent changes made by different members.
 * Conflict resolution comes more into play as more write nodes are added and as latency increases.
 * See [Disadvantage(s): replication](#disadvantages-replication) for points related to **both** master-slave and master-master.
 
