@@ -974,7 +974,6 @@ Proper normalization results in a minimization of redundant data. The best appro
 In B-trees, internal (non-leaf) nodes can have a variable number of child nodes within some pre-defined range. When data is inserted or removed from a node, its number of child nodes changes. In order to maintain the pre-defined range, internal nodes may be joined or split. Because a range of child nodes is permitted, B-trees do not need re-balancing as frequently as other self-balancing search trees, but may waste some space, since nodes are not entirely full. 
 <p align="center">
   <img src="https://en.wikipedia.org/wiki/B-tree#/media/File:B-tree.svg">
-  <br/>
 </p>
 
 
