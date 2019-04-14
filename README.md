@@ -919,7 +919,9 @@ Having more than one replica of a single piece of data means you can spread out 
 
 #### Denormalization
 
-Denormalization attempts to improve read performance at the expense of some write performance.  Redundant copies of the data are written in multiple tables to avoid expensive joins.  Some RDBMS such as [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) and Oracle support [materialized views](https://en.wikipedia.org/wiki/Materialized_view) which handle the work of storing redundant information and keeping redundant copies consistent.
+Denormalization is a strategy used on a previously-normalized database to increase performance. In computing, denormalization is the process of trying to improve the read performance of a database, at the expense of losing some write performance, by adding redundant copies of data or by grouping data. Redundant copies of the data are written in multiple tables to avoid expensive joins.  Some RDBMS such as [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) and Oracle support [materialized views](https://en.wikipedia.org/wiki/Materialized_view) which handle the work of storing redundant information and keeping redundant copies consistent.
+
+A normalized design will often "store" different but related pieces of information in separate logical tables (called relations). If these relations are stored physically as separate disk files, completing a database query that draws information from several relations (a join operation) can be slow. If many relations are joined, it may be prohibitively slow. There are two strategies for dealing with this. One method is to keep the logical design normalized, but allow the database management system (DBMS) to store additional redundant information on disk to optimise query response. In this case it is the DBMS software's responsibility to ensure that any redundant copies are kept consistent. Another approach is to denormalize the logical data design. With care this can achieve a similar improvement in query response, but at a cost—it is now the database designer's responsibility to ensure that the denormalized database does not become inconsistent. 
 
 Once data becomes distributed with techniques such as [federation](#federation) and [sharding](#sharding), managing joins across data centers further increases complexity.  Denormalization might circumvent the need for such complex joins.
 
@@ -942,12 +944,14 @@ SQL tuning is a broad topic and many [books](https://www.amazon.com/s/ref=nb_sb_
 It's important to **benchmark** and **profile** to simulate and uncover bottlenecks.
 
 * **Benchmark** - Simulate high-load situations with tools such as [ab](http://httpd.apache.org/docs/2.2/programs/ab.html).
-* **Profile** - Enable tools such as the [slow query log](http://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html) to help track performance issues.
+What queries are the worst? Where are the bottlenecks? Under what circumstances am I generating bad queries? 
+
+* **Profile** - Enable tools such  the [slow query log](http://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html) to help track performance issues.Profiling enables you to find the bottlenecks in your configuration, whether they be in memory, CPU, network, disk I/O, or, what is more likely, some combination of all of them.
 
 Benchmarking and profiling might point you to the following optimizations.
 
 ##### Tighten up the schema
-
+Proper normalization results in a minimization of redundant data. The best approach, IMO, is to normalize first and denormalize where performance demands it.
 * MySQL dumps to disk in contiguous blocks for fast access.
 * Use `CHAR` instead of `VARCHAR` for fixed-length fields.
     * `CHAR` effectively allows for fast, random access, whereas with `VARCHAR`, you must find the end of a string before moving onto the next one.
@@ -966,17 +970,29 @@ Benchmarking and profiling might point you to the following optimizations.
 * Writes could also be slower since the index also needs to be updated.
 * When loading large amounts of data, it might be faster to disable indices, load the data, then rebuild the indices.
 
+**B-tree** is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. B-tree is a generalization of a binary search tree in that a node can have more than two children. Unlike other self-balancing binary search trees, the B-tree is well suited for storage systems that read and write relatively large blocks of data, such as discs. It is commonly used in databases and file systems.
+In B-trees, internal (non-leaf) nodes can have a variable number of child nodes within some pre-defined range. When data is inserted or removed from a node, its number of child nodes changes. In order to maintain the pre-defined range, internal nodes may be joined or split. Because a range of child nodes is permitted, B-trees do not need re-balancing as frequently as other self-balancing search trees, but may waste some space, since nodes are not entirely full. 
+<p align="center">
+  <img src="https://en.wikipedia.org/wiki/B-tree#/media/File:B-tree.svg">
+  <br/>
+</p>
+
+
 ##### Avoid expensive joins
 
 * [Denormalize](#denormalization) where performance demands it.
 
 ##### Partition tables
-
+Often you have a table in which only a few columns are accessed frequently. Frequently accessed data is kept in one table while infrequently accessed data is kept in another. Since the data is now partitioned the infrequently access data takes up less memory. You can also optimize for writing: frequently changed data can be kept in one table, while infrequently changed data can be kept in another. 
 * Break up a table by putting hot spots in a separate table to help keep it in memory.
 
 ##### Tune the query cache
 
 * In some cases, the [query cache](https://dev.mysql.com/doc/refman/5.7/en/query-cache.html) could lead to [performance issues](https://www.percona.com/blog/2016/10/12/mysql-5-7-performance-tuning-immediately-after-installation/).
+
+##### Don’t Overuse Artificial Primary Keys
+Artificial primary keys are nice because they can make the schema less volatile.
+
 
 ##### Source(s) and further reading: SQL tuning
 
@@ -984,6 +1000,9 @@ Benchmarking and profiling might point you to the following optimizations.
 * [Is there a good reason i see VARCHAR(255) used so often?](http://stackoverflow.com/questions/1217466/is-there-a-good-reason-i-see-varchar255-used-so-often-as-opposed-to-another-l)
 * [How do null values affect performance?](http://stackoverflow.com/questions/1017239/how-do-null-values-affect-performance-in-a-database-search)
 * [Slow query log](http://dev.mysql.com/doc/refman/5.7/en/slow-query-log.html)
+
+##### Slow query log
+The slow query log consists of SQL statements that take more than long_query_time seconds to execute and require at least min_examined_row_limit rows to be examined. The slow query log can be used to find queries that take a long time to execute and are therefore candidates for optimization. 
 
 ### NoSQL
 
