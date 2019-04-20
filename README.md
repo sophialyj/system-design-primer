@@ -918,6 +918,7 @@ Having more than one replica of a single piece of data means you can spread out 
 * [Consistent hashing](http://www.paperplanes.de/2011/12/9/the-magic-of-consistent-hashing.html)
 
 #### Denormalization
+In a relational database, data is first categorized into a number of predefined types, and tables are created to hold individual entries, or records, of each type. The tables define the data within each record's fields, meaning that every record in the table has the same overall form. The administrator also defines the relationships between the tables, and selects certain fields that they believe will be most commonly used for searching and defines indexes on them. A key concept in the relational design is that any data that may be repeated is normally placed in its own table, and if these instances are related to each other, a column is selected to group them together, the foreign key. This design is known as database normalization.
 
 Denormalization is a strategy used on a previously-normalized database to increase performance. In computing, denormalization is the process of trying to improve the read performance of a database, at the expense of losing some write performance, by adding redundant copies of data or by grouping data. Redundant copies of the data are written in multiple tables to avoid expensive joins.  Some RDBMS such as [PostgreSQL](https://en.wikipedia.org/wiki/PostgreSQL) and Oracle support [materialized views](https://en.wikipedia.org/wiki/Materialized_view) which handle the work of storing redundant information and keeping redundant copies consistent.
 
@@ -1016,9 +1017,9 @@ In addition to choosing between [SQL or NoSQL](#sql-or-nosql), it is helpful to 
 
 > Abstraction: hash table
 
-A key-value store generally allows for O(1) reads and writes and is often backed by memory or SSD.  Data stores can maintain keys in [lexicographic order](https://en.wikipedia.org/wiki/Lexicographical_order), allowing efficient retrieval of key ranges.  Key-value stores can allow for storing of metadata with a value.
+A key-value store generally allows for O(1) reads and writes and is often backed by memory or SSD.  Data stores can maintain keys in [lexicographic order](https://en.wikipedia.org/wiki/Lexicographical_order), allowing **efficient retrieval of key ranges**.  Key-value stores can allow for storing of metadata with a value.
 
-Key-value stores provide high performance and are often used for simple data models or for rapidly-changing data, such as an in-memory cache layer.  Since they offer only a limited set of operations, complexity is shifted to the application layer if additional operations are needed.
+Key-value stores provide high performance and are often used for simple data models or for **rapidly-changing data**, such as an in-memory cache layer.  Since they offer only **a limited set of operations**, complexity is shifted to the application layer if additional operations are needed.
 
 A key-value store is the basis for more complex systems such as a document store, and in some cases, a graph database.
 
@@ -1031,22 +1032,66 @@ A key-value store is the basis for more complex systems such as a document store
 
 #### Document store
 
-> Abstraction: key-value store with documents stored as values
+> Abstraction: a specialized key0value store key-value store with documents stored as values
 
-A document store is centered around documents (XML, JSON, binary, etc), where a document stores all information for a given object.  Document stores provide APIs or a query language to query based on the internal structure of the document itself.  *Note, many key-value stores include features for working with a value's metadata, blurring the lines between these two storage types.*
+A document store is centered around documents (XML, JSON, binary<like PDF, excel>, etc)(semi-structured data, can think of as an object), where a document stores all information for a given object.  Document stores provide **APIs or a query language** to query based on the internal structure of the document itself.  *Note, many key-value stores include features for working with a value's metadata, blurring the lines between these two storage types.*
 
-Based on the underlying implementation, documents are organized by collections, tags, metadata, or directories.  Although documents can be organized or grouped together, documents may have fields that are completely different from each other.
+Documents are addressed in the database via a unique key that represents that document. This key is a simple identifier (or ID), typically a string, a URI, or a path. The key can be used to retrieve the document from the database. Typically the database retains an index on the key to speed up document retrieval, and in some cases the key is required to create or insert the document into the database.
 
-Some document stores like [MongoDB](https://www.mongodb.com/mongodb-architecture) and [CouchDB](https://blog.couchdb.org/2016/08/01/couchdb-2-0-architecture/) also provide a SQL-like language to perform complex queries.  [DynamoDB](http://www.read.seas.harvard.edu/~kohler/class/cs239-w08/decandia07dynamo.pdf) supports both key-values and documents.
+Based on the underlying implementation, documents are organized by **collections, tags, metadata, or directories**.  Although documents can be organized or grouped together, documents may have fields that are completely different from each other.
 
-Document stores provide high flexibility and are often used for working with occasionally changing data.
+Some document stores like [MongoDB](https://www.mongodb.com/mongodb-architecture) and [CouchDB](https://blog.couchdb.org/2016/08/01/couchdb-2-0-architecture/) also provide a **SQL-like language** to perform complex queries.  [DynamoDB](http://www.read.seas.harvard.edu/~kohler/class/cs239-w08/decandia07dynamo.pdf) supports both key-values and documents.
+
+Document stores provide **high flexibility** and are often used for working with occasionally changing data.
+Document databases contrast strongly with the traditional relational database (RDB). Relational databases generally store data in separate tables that are defined by the programmer, and a single object may be spread across several tables. Document databases store all information for a given object in a single instance in the database, and every stored object can be different from every other. This eliminates the need for object-relational mapping while loading data into the database.
+
+In contrast to relational database, in a document-oriented database there may be no internal structure that maps directly onto the concept of a table, and the fields and relationships generally don't exist as predefined concepts. Instead, all of the data for an object is placed in a single document, and stored in the database as a single entry. In the address book example, the document would contain the contact's name, image, and any contact info, all in a single record. That entry is accessed through its key, which allows the database to retrieve and return the document to the application. No additional work is needed to retrieve the related data; all of this is returned in a single object.
+A key difference between the document-oriented and relational models is that the data formats are not predefined in the document case. In most cases, any sort of document can be stored in any database, and those documents can change in type and form at any time. 
+To aid retrieval of information from the database, document-oriented systems generally allow the administrator to provide hints to the database to look for certain types of information. . Tagging entries as being part of an address book, which allows the programmer to retrieve related types of information, like "all the address book entries". 
 
 ##### Source(s) and further reading: document store
 
 * [Document-oriented database](https://en.wikipedia.org/wiki/Document-oriented_database)
 * [MongoDB architecture](https://www.mongodb.com/mongodb-architecture)
-* [CouchDB architecture](https://blog.couchdb.org/2016/08/01/couchdb-2-0-architecture/)
+* [CouchDB architecture](https://blog.couchdb.org/2016/08/01/couchdb-2-0-architecture/) database is divided into shards. Any given document belongs to one shard, and this is determined directly from its ID (and only its ID).
 * [Elasticsearch architecture](https://www.elastic.co/blog/found-elasticsearch-from-the-bottom-up)
+
+##### MongoDB
+* fast, flexible(adapt and make changes quickly), versatile(supports a wide variety of data and queries)
+* Distributed system design: availability with self-healing recovery, scalability(grow horizontally through native sharding), workload isolation (run operational and analytical workloads in the same cluster, locality(Place data on specific devices and in specific geographies for governance, class of service, and low-latency access)
+* Freedom to run anywhere: portability(database run anywhere), cloud agnostic(Leverage the benefits of a multi-cloud strategy with no lock-in), global coverage
+MongoDB uses **JSON-like documents** with schemata. 
+* Ad hoc queries
+MongoDB supports **field, range query, and regular expression searches**. Queries can return specific fields of documents and also include user-defined JavaScript functions. Queries can also be configured to return a random sample of results of a given size. 
+* Indexing
+Fields in a MongoDB document can be indexed with primary and secondary indices.
+* Replication
+MongoDB provides high availability with **replica sets**. A replica set consists of two or more copies of the data.
+All writes and reads are done on the primary replica by default. Secondary replicas maintain a copy of the data of the primary using built-in replication. When a primary replica fails, the replica set automatically conducts an election process to determine which secondary should become the primary. Secondaries can optionally serve read operations, but that data is only eventually consistent by default.  --> automatic failover
+* Load Balanding
+MongoDB scales **horizontally using sharding**.The user chooses a shard key, which determines how the data in a collection will be distributed. The data is split into ranges (based on the shard key) and distributed across multiple shards. (A shard is a master with one or more replicas.). Alternatively, the shard key can be hashed to map to a shard – enabling an even data distribution.
+MongoDB can run over multiple servers, balancing the load or duplicating data to keep the system up and running in case of hardware failure.
+* File storage
+MongoDB can be used as a file system,
+* Server-side JavaScript execution
+JavaScript can be used in queries, aggregation functions (such as MapReduce), and sent directly to the database to be executed.
+
+##### Amazon DynamoDB (Lyft, Airbnb, and Redfin )
+Amazon DynamoDB is a **key-value and document** database that delivers single-digit millisecond performance at any scale. It can support tables of virtually any size with horizontal scaling. It's a fully managed, multiregion, multimaster database with built-in security, backup and restore, and in-memory caching for internet-scale applications. DynamoDB can handle more than 10 trillion requests per day and support peaks of more than 20 million requests per second.
+###### Performance at scale
+* Key-value and document data models: Flexible schema, so each row can have any number of columns at any point in time. This allows you to easily adapt the tables as your business requirements change, without having to redefine the table schema as you would in relational databases. 
+* Microsecond latency with DynamoDB Accelerator, which is an in-memory cache that delivers fast read performance for your tables at scale by enabling you to use a fully managed in-memory cache. 
+* Automated global replication with global tables: DynamoDB global tables replicate your data automatically across your choice of AWS Regions and automatically scale capacity to accommodate your workloads. 
+* Real-time data processing with DynamoDB Streams: DynamoDB Streams capture a time-ordered sequence of item-level modifications in any DynamoDB table and store this information in a log for up to 24 hours. Applications can benefit from the ability to capture changes to items stored in a DynamoDB table at the point in time when such changes occur.
+###### Serverless
+With DynamoDB, there are no servers to provision, patch, or manage, and no software to install, maintain, or operate. DynamoDB automatically scales tables to adjust for capacity and maintains performance with zero administration. Availability and fault tolerance are built in, eliminating the need to architect your applications for these capabilities.
+* On-demand capacity mode
+* Auto scaling
+* Built-in support for ACID transactions
+* On-demand backups and point-in-time recovery: continuous backups of your DynamoDB table data, and you can restore that table to any point in time up to the second during the preceding 35 days. On-demand backup and restore allows you to create full backups of your DynamoDB tables’ data for data archiving, which can help you meet your corporate and governmental regulatory requirements. 
+* Encryption at rest
+
+* Performance at scale:  
 
 #### Wide column store
 
@@ -1081,7 +1126,7 @@ Wide column stores offer high availability and high scalability.  They are often
 
 > Abstraction: graph
 
-In a graph database, each node is a record and each arc is a relationship between two nodes.  Graph databases are optimized to represent complex relationships with many foreign keys or many-to-many relationships.
+In a graph database, each node is a record and each arc is a **relationship** between two nodes, which allows them to link documents for rapid traversal..  Graph databases are optimized to represent complex relationships with many foreign keys or many-to-many relationships.
 
 Graphs databases offer high performance for data models with complex relationships, such as a social network.  They are relatively new and are not yet widely-used; it might be more difficult to find development tools and resources.  Many graphs can only be accessed with [REST APIs](#representational-state-transfer-rest).
 
