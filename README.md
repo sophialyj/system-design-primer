@@ -1023,12 +1023,40 @@ Key-value stores provide high performance and are often used for simple data mod
 
 A key-value store is the basis for more complex systems such as a document store, and in some cases, a graph database.
 
+Key-value systems treat the data as a single opaque collection, which may have different fields for every record. 
+
+###### Disadvantages
+* No way to make a column mandatory (equivalent of NOT NULL).
+* No way to use SQL data types to validate entries.
+* No way to ensure that attribute names are spelled consistently.
+* No way to put a foreign key on the values of any given attribute, e.g. for a lookup table.
+* Fetching results in a conventional tabular layout is complex and expensive, because to get attributes from multiple rows you need to do  JOIN for each attribute.
+
 ##### Source(s) and further reading: key-value store
 
 * [Key-value database](https://en.wikipedia.org/wiki/Key-value_database)
 * [Disadvantages of key-value stores](http://stackoverflow.com/questions/4056093/what-are-the-disadvantages-of-using-a-key-value-table-over-nullable-columns-or)
 * [Redis architecture](http://qnimate.com/overview-of-redis-architecture/)
 * [Memcached architecture](https://www.adayinthelifeof.nl/2011/02/06/memcache-internals/)
+
+##### Memcache
+
+##### Redis
+
+##### Memcache vs Redis
+What we need to consider: Read/write speed; Memeory usage; Disk I/O usage; Disk I/O dumping; scaling
+* Similarity: Both Memcached and Redis serve as in-memory, key-value data stores, although Redis is more accurately described as **a data structure store**. Redis is In-memory data structure store, used as database, cache and message broker. Both Memcached and Redis belong to the NoSQL family of data management solutions, and both are based on a key-value data model. They both keep all data in RAM, which of course makes them supremely useful as a caching layer. Any use case you might use memcached for redis can solve equally well. 
+###### Why memcached
+Memcached could be preferable when caching **relatively small and static data**, such as HTML code fragments. Memcached's internal memory management, is more efficient in the simplest use cases because it **consumes comparatively less memory resources for metadata**.
+Memcached's memory management efficiency diminishes quickly when data size is dynamic, at which point Memcached's memory can become fragmented. Also, large data sets often involve serialized data, which always requires more space to store. If you are using Memcached then data is lost with a restart and rebuilding cache is a costly process.
+Another scenario in which Memcached has an advantage over Redis is in **scaling**. Because Memcached is **multithreaded**, you can easily scale up by giving it more computational resources. Redis, which is mostly single-threaded, can **scale horizontally via clustering without loss of data**. Clustering is an effective scaling solution, but it is comparatively more complex to set up and operate. **Memcached does not support replication**.
+Memcached is very good to handle **high traffic websites**. It can read lots of information at a time and give you back at a great response time. Redis can also handle high traffic on read but also can handle heavy writes as well.
+
+<p align="center">
+  <img src="https://media.licdn.com/dms/image/C4E12AQH9HIqtqBnQTw/article-inline_image-shrink_1000_1488/0?e=1560988800&v=beta&t=0gv0bL7--52_p-07diX6ikjslYKwGtK7jlDm74Ri44g">
+  <br/>
+</p>
+
 
 #### Document store
 
