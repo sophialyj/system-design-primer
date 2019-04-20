@@ -1039,14 +1039,12 @@ Key-value systems treat the data as a single opaque collection, which may have d
 * [Redis architecture](http://qnimate.com/overview-of-redis-architecture/)
 * [Memcached architecture](https://www.adayinthelifeof.nl/2011/02/06/memcache-internals/)
 
-##### Memcache
+#### Redis
 
-##### Redis
-
-##### Memcache vs Redis
+#### Memcache vs Redis
 What we need to consider: Read/write speed; Memeory usage; Disk I/O usage; Disk I/O dumping; scaling
 * Similarity: Both Memcached and Redis serve as in-memory, key-value data stores, although Redis is more accurately described as **a data structure store**. Redis is In-memory data structure store, used as database, cache and message broker. Both Memcached and Redis belong to the NoSQL family of data management solutions, and both are based on a key-value data model. They both keep all data in RAM, which of course makes them supremely useful as a caching layer. Any use case you might use memcached for redis can solve equally well. 
-###### Why memcached
+##### Why memcached
 Memcached could be preferable when caching **relatively small and static data**, such as HTML code fragments. Memcached's internal memory management, is more efficient in the simplest use cases because it **consumes comparatively less memory resources for metadata**.
 Memcached's memory management efficiency diminishes quickly when data size is dynamic, at which point Memcached's memory can become fragmented. Also, large data sets often involve serialized data, which always requires more space to store. If you are using Memcached then data is lost with a restart and rebuilding cache is a costly process.
 Another scenario in which Memcached has an advantage over Redis is in **scaling**. Because Memcached is **multithreaded**, you can easily scale up by giving it more computational resources. Redis, which is mostly single-threaded, can **scale horizontally via clustering without loss of data**. Clustering is an effective scaling solution, but it is comparatively more complex to set up and operate. **Memcached does not support replication**.
@@ -1057,6 +1055,17 @@ Memcached is very good to handle **high traffic websites**. It can read lots of 
   <br/>
 </p>
 
+##### Why Redis
+Redis has five primary data structures to choose from. Caches employ a mechanism called data eviction to make room for new data by deleting old data from memory. Redis allows for fine-grained control over eviction, letting you choose from six different eviction policies. Redis supports both lazy and active eviction, where data is evicted only when more space is needed or proactively. Memcached, on the other hand, provides lazy eviction only.
+* Powerful data types and powerful commands to leverage them. Hashes, Sorted Sets, Lists, and more.
+* Persistence to disk, by default.
+* Transactions with optimistic locking (WATCH/MULTI/EXEC)
+* Pub/sub. Extremely fast.
+* Values up to 512MB in size (memcached limited to 1MB per key)
+* Lua scripting (as of 2.6)
+* Built in clustering (as of 3.0)
+* Extremely fast at everything
+They allow redis to provide a fantastic shared queue (lists), a great messaging solution (pub/sub), a good place for storing sessions (hashes), and a compelling place for high score tracking (sorted sets). 
 
 #### Document store
 
