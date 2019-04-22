@@ -496,6 +496,7 @@ This approach is seen in file systems and RDBMSes.  Strong consistency works wel
 There are two main patterns to support high availability: **fail-over** and **replication**.
 
 ### Fail-over
+Failover is switching to a redundant or standby computer server, system, hardware component or network upon failure.
 
 #### Active-passive
 
@@ -613,6 +614,8 @@ Sites with heavy traffic work well with pull CDNs, as traffic is spread out more
   <br/>
   <i><a href=http://horicky.blogspot.com/2010/10/scalable-system-design-patterns.html>Source: Scalable system design patterns</a></i>
 </p>
+performance, reliability, security, and scale
+Load balancers are most commonly deployed when a site needs multiple servers because the volume of requests is too much for a single server to handle efficiently. Deploying multiple servers also eliminates a single point of failure, making the website more reliable. Most commonly, the servers all host the same content, and the load balancer’s job is to distribute the workload in a way that makes the best use of each server’s capacity, prevents overload on any server, and results in the fastest possible response to the client.
 
 Load balancers distribute incoming client requests to computing resources such as application servers and databases.  In each case, the load balancer returns the response from the computing resource to the appropriate client.  Load balancers are effective at:
 
@@ -690,11 +693,13 @@ A reverse proxy is a type of proxy server that retrieves resources on behalf of 
 
 Additional benefits include:
 
-* **Increased security** - Reverse proxies can hide the existence and characteristics of an origin backend server or servers., blacklist IPs, limit number of connections per client
-* **Increased scalability and flexibility** - Clients only see the reverse proxy's IP, allowing you to scale servers or change their configuration. A reverse proxy can distribute the load from incoming requests to several servers, with each server serving its own application area. 
+* **Increased security** - Reverse proxies can hide the existence and characteristics of an origin backend server or servers., rejecting traffic from particular client IP addresses (blacklisting),, limit number of connections per client to help protect backend servers from distributed denial-of-service (DDoS) attacks
+* **Increased scalability and flexibility** - Clients only see the reverse proxy's IP, allowing you to scale servers or change their configuration. A reverse proxy can distribute the load from incoming requests to several servers, with each server serving its own application area. This is particularly useful In a load-balanced environment, where you can scale the number of servers up and down to match fluctuations in traffic volume.
+
+Another reason to deploy a reverse proxy is for web acceleration – reducing the time it takes to generate a response and return it to the client. Techniques for web acceleration include the following:
 * **SSL termination** - Decrypt incoming requests and encrypt server responses so backend servers do not have to perform these potentially expensive operations
     * Removes the need to install [X.509 certificates](https://en.wikipedia.org/wiki/X.509) on each server
-* **Compression** - Compress server responses in order to spped up loading times
+* **Compression** - Compressing server responses before returning them to the client (for instance, with gzip) reduces the amount of bandwidth they require, which speeds their transit over the network.
 * **Caching** - Return the response for cached requests
 * **Static content** - Serve static content directly
     * HTML/CSS/JS
@@ -707,6 +712,9 @@ Additional benefits include:
 * Deploying a load balancer is useful when you have multiple servers.  Often, load balancers route traffic to a set of servers serving the same function.
 * Reverse proxies can be useful even with just one web server or application server, opening up the benefits described in the previous section.
 * Solutions such as NGINX and HAProxy can support both layer 7 reverse proxying and load balancing.
+
+Reverse proxy servers and load balancers are components in a client-server computing architecture. Both act as intermediaries in the communication between the clients and servers, performing functions that improve efficiency.
+A reverse proxy accepts a request from a client, forwards it to a server that can fulfill it, and returns the server’s response to the client. A load balancer distributes incoming client requests among a group of servers, in each case returning the response from the selected server to the appropriate client.
 
 ### Disadvantage(s): reverse proxy
 
