@@ -656,7 +656,7 @@ Load balancers can also help with horizontal scaling, improving performance and 
 #### Disadvantage(s): horizontal scaling
 
 * Scaling horizontally introduces complexity and involves cloning servers
-    * Servers should be stateless: they should not contain any user-related data like sessions or profile pictures
+    * Servers should be **stateless: they should not contain any user-related data like sessions or profile pictures**
     * Sessions can be stored in a centralized data store such as a [database](#database) (SQL, NoSQL) or a persistent [cache](#cache) (Redis, Memcached)
 * Downstream servers such as caches and databases need to handle more simultaneous connections as upstream servers scale out
 
@@ -664,7 +664,7 @@ Load balancers can also help with horizontal scaling, improving performance and 
 
 * The load balancer can become a performance bottleneck if it does not have enough resources or if it is not configured properly.
 * Introducing a load balancer to help eliminate single points of failure results in increased complexity.
-* A single load balancer is a single point of failure, configuring multiple load balancers further increases complexity.
+* A single load balancer is a **single point of failure**, configuring multiple load balancers further increases complexity.
 
 ### Source(s) and further reading
 
@@ -684,16 +684,17 @@ Load balancers can also help with horizontal scaling, improving performance and 
   <i><a href=https://upload.wikimedia.org/wikipedia/commons/6/67/Reverse_proxy_h2g2bob.svg>Source: Wikipedia</a></i>
   <br/>
 </p>
+A reverse proxy taking requests from the Internet and forwarding them to servers in an internal network. Those making requests to the proxy may not be aware of the internal network.
 
-A reverse proxy is a web server that centralizes internal services and provides unified interfaces to the public.  Requests from clients are forwarded to a server that can fulfill it before the reverse proxy returns the server's response to the client.
+A reverse proxy is a type of proxy server that retrieves resources on behalf of a client from one or more servers. These resources are then returned to the client, appearing as if they originated from the proxy server itself.
 
 Additional benefits include:
 
-* **Increased security** - Hide information about backend servers, blacklist IPs, limit number of connections per client
-* **Increased scalability and flexibility** - Clients only see the reverse proxy's IP, allowing you to scale servers or change their configuration
+* **Increased security** - Reverse proxies can hide the existence and characteristics of an origin backend server or servers., blacklist IPs, limit number of connections per client
+* **Increased scalability and flexibility** - Clients only see the reverse proxy's IP, allowing you to scale servers or change their configuration. A reverse proxy can distribute the load from incoming requests to several servers, with each server serving its own application area. 
 * **SSL termination** - Decrypt incoming requests and encrypt server responses so backend servers do not have to perform these potentially expensive operations
     * Removes the need to install [X.509 certificates](https://en.wikipedia.org/wiki/X.509) on each server
-* **Compression** - Compress server responses
+* **Compression** - Compress server responses in order to spped up loading times
 * **Caching** - Return the response for cached requests
 * **Static content** - Serve static content directly
     * HTML/CSS/JS
@@ -703,7 +704,7 @@ Additional benefits include:
 
 ### Load balancer vs reverse proxy
 
-* Deploying a load balancer is useful when you have multiple servers.  Often, load balancers  route traffic to a set of servers serving the same function.
+* Deploying a load balancer is useful when you have multiple servers.  Often, load balancers route traffic to a set of servers serving the same function.
 * Reverse proxies can be useful even with just one web server or application server, opening up the benefits described in the previous section.
 * Solutions such as NGINX and HAProxy can support both layer 7 reverse proxying and load balancing.
 
