@@ -443,9 +443,10 @@ Generally, you should aim for **maximal throughput** with **acceptable latency**
 
 In a distributed computer system, you can only support two of the following guarantees:
 
-* **Consistency** - Every read receives the most recent write or an error
-* **Availability** - Every request receives a response, without guarantee that it contains the most recent version of the information
-* **Partition Tolerance** - The system continues to operate despite arbitrary partitioning due to network failures
+* **Consistency** - All nodes see the same data at the same time.
+* **Availability** - Every request receives a response, without guarantee that it contains the most recent version of the information. Every request received from the system produces a response that can be a result or a failure.
+* **Partition Tolerance** - If a partition occursdue to network failures the system continues to work. 
+The CAP theorem does not means that the system can never provide these properties at the same time but it can **guarantee** just two of them. 
 
 *Networks aren't reliable, so you'll need to support partition tolerance.  You'll need to make a software tradeoff between consistency and availability.*
 
@@ -780,15 +781,23 @@ A unit of work performed within a database management system against a database,
 **ACID** is a set of properties of relational database [transactions](https://en.wikipedia.org/wiki/Database_transaction).
 
 * **Atomicity** - Each transaction is all or nothing, must either complete entirely or have no effect
-* **Consistency** - Any transaction will bring the database from one valid state to another
-* **Isolation** - Executing transactions concurrently has the same results as if the transactions were executed serially
-* **Durability** - Transactions that complete successfully must get written to durable storage.
+* **Consistency** - Any transaction will bring the database from one valid state to another. The status of the database after each transaction should remain consistent. This means that the transaction execution should not violate any database constraints otherwise it will be aborted.
+* **Isolation** - Executing transactions concurrently has the same results as if the transactions were executed serially. if multiple transactions are accessing to the same data at the same time, the resulting database status should be the same obtained executing the transactions in a serially (i.e.: one after the other). This means that the execution of a transaction should not interfere with the others.
+* **Durability** - Transactions that complete successfully must get written to durable storage. If a transaction is successfully committed, the system status should be persistent even in case of a system failure.
 
 There are many techniques to scale a relational database: **master-slave replication**, **master-master replication**, **federation**, **sharding**, **denormalization**, and **SQL tuning**.
 
 #### Master-slave replication
 
 The master serves reads and writes, replicating writes to one or more slaves, which serve only reads.  Slaves can also replicate to additional slaves in a tree-like fashion.  If the master goes offline, the system can continue to operate in read-only mode until a slave is promoted to a master or a new master is provisioned. Allowing only a single master makes it easier to achieve consistency among the members of the group, but is less flexible than multi-master replication.
+Notice that there is a time window of data lost if the master crashes before it propagate its update to any slaves, so some system will wait synchronously for the update to be propagated to at least one slave.
+Read requests can go to any replicas if the client can tolerate some degree of data staleness. This is where the read workload is distributed among many replicas. If the client cannot tolerate staleness for certain data, it also need to go to the master.
+
+Master Slave model works very well in general when the application has a high read/write ratio. It also works very well when the update happens evenly in the key range. So it is the predominant model of data replication.
+
+There are 2 ways how the master propagate updates to the slave; **State transfer** and **Operation transfer**. In State transfer, the master passes its latest state to the slave, which then replace its current state with the latest state. In operation transfer, the master propagate a sequence of operations to the slave which then apply the operations in its local state. The state transfer model is more robust against message lost because as long as a latter more updated message arrives, the replica still be able to advance to the latest state.
+Even in state transfer mode, we don't want to send the full object for updating other replicas because changes typically happens within a small portion of the object. In will be a waste of network bandwidth if we send the unchanged portion of the object, so we need a mechanism to detect and send just the delta (the portion that has been changed). One common approach is **break the object into chunks and compute a hash tree of the object**. So the replica can just compare their hash tree to figure out which chunk of the object has been changed and only send those over.
+In operation transfer mode, usually much less data need to be send over the network. However, it requires a reliable message mechanism with delivery order guarantee.
 
 <p align="center">
   <img src="http://i.imgur.com/C9ioGtn.png">
@@ -802,7 +811,7 @@ The master serves reads and writes, replicating writes to one or more slaves, wh
 * See [Disadvantage(s): replication](#disadvantages-replication) for points related to **both** master-slave and master-master.
 
 #### Master-master replication
-
+If there is hot spots in certain key range, and there is intensive write request, the master slave model will be unable to spread the workload evenly. Multi-master model allows updates to happen at any replica (I think call it "No-Master" is more accurate).
 Both masters serve reads and writes and coordinate with each other on writes.  If either master goes down, the system can continue to operate with both reads and writes.
 
 <p align="center">
@@ -810,6 +819,31 @@ Both masters serve reads and writes and coordinate with each other on writes.  I
   <br/>
   <i><a href=http://www.slideshare.net/jboner/scalability-availability-stability-patterns/>Source: Scalability, availability, stability, patterns</a></i>
 </p>
+
+##### Quorum Based 2PC
+To provide "strict consistency", we can use a traditional 2PC protocol to bring all replicas to the same state at every update. Lets say there is N replicas for a data. When the data is update, there is a "prepare" phase where the coordinator ask every replica to confirm whether each of them is ready to perform the update. Each of the replica will then write the data to a log file and when success, respond to the coordinator.After gathering all replicas responses positively, the coordinator will initiate the second "commit" phase and then ask every replicas to commit and each replica then write another log entry to confirm the update. Notice that there are some scalability issue as the coordinator need to "synchronously" wait for quite a lot of back and forth network roundtrip and disk I/O to complete.
+
+On the other hand, if any one of the replica crashes, the update will be unsuccessful. As there are more replicas, chance of having one of them increases. Therefore, replication is hurting the availability rather than helping. This make traditional 2PC not a popular choice for high throughput transactional system.
+
+A more efficient way is to use the quorum based 2PC (e.g. PAXOS). In this model, **the coordinator only need to update W replicas (rather than all N replicas) synchronously**. The coordinator still write to all the N replicas but only wait for positive acknowledgment for any W of the N to confirm. This is much more efficient from a probabilistic standpoint.
+
+However, since no all replicas are update, we need to be careful when reading the data to make sure the read can reach at least one replica that has been previously updated successful. When reading the data, we need to read R replicas and return the one with the latest timestamp.
+For "strict consistency", the important condition is to make sure the read set and the write set overlap. ie: W + R > N
+
+##### Vector Clock
+Vector Clock is a timestamp mechanism such that we can reason about causal relationship between updates. First of all, each replica keeps vector clock. Lets say replica i has its clock Vi. Vi[i] is the logical clock which if every replica follows certain rules to update its vector clock.
+Whenever an internal operation happens at replica i, it will advance its clock Vi[i]
+Whenever replica i send a message to replica j, it will first advance its clock Vi[i] and attach its vector clock Vi to the message
+Whenever replica j receive a message from replica i, it will first advance its clock Vj[j] and then merge its clock with the clock Vm attached in the message. ie: Vj[k] = max(Vj[k], Vm[k])
+
+##### Gossip (Operation Transfer Model)
+In an operation transfer approach, the sequence of applying the operations is very important. At the minimum causal order need to be maintained. Because of the ordering issue, each replica has to defer executing the operation until all the preceding operations has been executed. Therefore replicas save the operation request to a log file and exchange the log among each other and consolidate these operation logs to figure out the right sequence to apply the operations to their local store in an appropriate order.
+
+"Causal order" means every replica will apply changes to the "causes" before apply changes to the "effect". "Total order" requires that every replica applies the operation in the same sequence.
+
+In this model, each replica keeps a list of vector clock, Vi is the vector clock the replica itself and Vj is the vector clock when replica i receive replica j's gossip message. There is also a V-state that represent the vector clock of the last updated state.
+
+When a query is submitted by the client, it will also send along its vector clock which reflect the client's view of the world. The replica will check if it has a view of the state that is later than the client's view.
 
 ##### Advantage(s)
 * If one master fails, other masters continue to update the database.
@@ -899,6 +933,16 @@ To create a complex friends page, or a user profile page, or a thread discussion
 
 ##### Consistent Hashing
 Here you have a number of nodes in a cluster of databases, or in a cluster of web caches. How do you figure out where the data for a particular key goes in that cluster -- consistent hashing. The same key will always return the same hash code.
+Since the overall hashtable is distributed across many VNs, we need a way to map each key to the corresponding VN.
+One way is to use
+partition = key mod (total_VNs)
+The disadvantage of this scheme is when we alter the number of VNs, then the ownership of existing keys has changed dramatically, which requires full data redistribution. Most large scale store use a "consistent hashing" technique to minimize the amount of ownership changes.
+In the consistent hashing scheme, the key space is finite and lie on the circumference of a ring. The virtual node id is also allocated from the same key space. For any key, its owner node is defined as the first encountered virtual node if walking clockwise from that key. If the owner node crashes, all the key it owns will be adopted by its clockwise neighbor. Therefore, key redistribution happens only within the neighbor of the crashed node, all other nodes retains the same set of keys.
+<p align="center">
+  <img src="http://1.bp.blogspot.com/_j6mB7TMmJJY/SwohQZ9HTAI/AAAAAAAAAXM/X9CAGfpnL2o/s1600/p1.png">
+  <br/>
+</p>
+
 * Easier to avoid hotspots. e.g. Assume a key is based on the our of the day. And evening hours are usually the busiest time of the day, without consistent hashing, all the load goes to the single node that carries all the relevant data. But when you determine the location in the cluster based solely on the hash of the key, chances are much higher that two keys lexicographically close to each other end up on different nodes. Thus, the load is shared more evenly. The disadvantage is that you lose the order of keys.
 There are partitioning schemes that can work around this, even with a range-based key location. HBase (and Google's BigTable, for that matter) stores ranges of data in separate tablets. As tablets grow beyond their maximum size, they're split up and the remaining parts re-distributed. The advantage of this is that the original range is kept, even as you scale up.
 * Enable partitioning
@@ -990,6 +1034,18 @@ Often you have a table in which only a few columns are accessed frequently. Freq
 ##### Don’t Overuse Artificial Primary Keys
 Artificial primary keys are nice because they can make the schema less volatile.
 
+##### Membership changes
+Notice that virtual nodes can join and leave the network at any time without impacting the operation of the ring.
+
+When a new node joins the network
+1. The joining node announce its presence and its id to some well known VNs or just broadcast)
+2. All the neighbors (left and right side) will adjust the change of key ownership as well as the change of replica memberships. This is typically done synchronously.
+3. The joining node starts to bulk copy data from its neighbor in parallel asynchronously.
+4. The membership change is asynchronously propagate to the other nodes.
+When an existing node leaves the network (e.g. crash)
+1. The crashed node no longer respond to gossip message so its neighbors knows about it.
+2. The neighbor will update the membership changes and copy data asynchronously
+
 
 ##### Source(s) and further reading: SQL tuning
 
@@ -1007,7 +1063,7 @@ NoSQL is a collection of data items represented in a **key-value store**, **docu
 
 **BASE** is often used to describe the properties of NoSQL databases.  In comparison with the [CAP Theorem](#cap-theorem), BASE chooses availability over consistency.
 
-* **Basically available** - the system guarantees availability.
+* **Basically available** - indicates that the system does guarantee availability. The availability in terms of the CAP theorem is not insured. So a transaction could potentially not generate a response, but the system will try its best to do so.
 * **Soft state** - the state of the system may change over time, even without input.
 * **Eventual consistency** - the system will become consistent over a period of time, given that the system doesn't receive input during that period.
 
@@ -1044,6 +1100,12 @@ Key-value systems treat the data as a single opaque collection, which may have d
 #### Memcache vs Redis
 What we need to consider: Read/write speed; Memeory usage; Disk I/O usage; Disk I/O dumping; scaling
 * Similarity: Both Memcached and Redis serve as in-memory, key-value data stores, although Redis is more accurately described as **a data structure store**. Redis is In-memory data structure store, used as database, cache and message broker. Both Memcached and Redis belong to the NoSQL family of data management solutions, and both are based on a key-value data model. They both keep all data in RAM, which of course makes them supremely useful as a caching layer. Any use case you might use memcached for redis can solve equally well. 
+Memcached is a simple volatile cache server. It allows you to store key/value pairs where the value is limited to being a string up to 1MB. When you restart memcached your data is gone. This is fine for a cache. You shouldn't store anything important there.
+Redis can act as a cache as well. It can store key/value pairs too. In redis they can even be up to 512MB.
+
+You can turn off persistence and it will happily lose your data on restart too. If you want your cache to survive restarts it lets you do that as well. In fact, that's the default.
+
+
 ##### Why memcached
 Memcached could be preferable when caching **relatively small and static data**, such as HTML code fragments. Memcached's internal memory management, is more efficient in the simplest use cases because it **consumes comparatively less memory resources for metadata**.
 Memcached's memory management efficiency diminishes quickly when data size is dynamic, at which point Memcached's memory can become fragmented. Also, large data sets often involve serialized data, which always requires more space to store. If you are using Memcached then data is lost with a restart and rebuilding cache is a costly process.
@@ -1072,6 +1134,7 @@ They allow redis to provide a fantastic shared queue (lists), a great messaging 
 > Abstraction: a specialized key0value store key-value store with documents stored as values
 
 A document store is centered around documents (XML, JSON, binary<like PDF, excel>, etc)(semi-structured data, can think of as an object), where a document stores all information for a given object.  Document stores provide **APIs or a query language** to query based on the internal structure of the document itself.  *Note, many key-value stores include features for working with a value's metadata, blurring the lines between these two storage types.*
+ The main difference with the key/value stores is that the documents are processed and their internal structures can be used for indexing and other optimization purposes. 
 
 Documents are addressed in the database via a unique key that represents that document. This key is a simple identifier (or ID), typically a string, a URI, or a path. The key can be used to retrieve the document from the database. Typically the database retains an index on the key to speed up document retrieval, and in some cases the key is required to create or insert the document into the database.
 
@@ -1085,6 +1148,7 @@ Document databases contrast strongly with the traditional relational database (R
 In contrast to relational database, in a document-oriented database there may be no internal structure that maps directly onto the concept of a table, and the fields and relationships generally don't exist as predefined concepts. Instead, all of the data for an object is placed in a single document, and stored in the database as a single entry. In the address book example, the document would contain the contact's name, image, and any contact info, all in a single record. That entry is accessed through its key, which allows the database to retrieve and return the document to the application. No additional work is needed to retrieve the related data; all of this is returned in a single object.
 A key difference between the document-oriented and relational models is that the data formats are not predefined in the document case. In most cases, any sort of document can be stored in any database, and those documents can change in type and form at any time. 
 To aid retrieval of information from the database, document-oriented systems generally allow the administrator to provide hints to the database to look for certain types of information. . Tagging entries as being part of an address book, which allows the programmer to retrieve related types of information, like "all the address book entries". 
+Document stores are commonly considered as the best alternative to SQL for web applications. Some of them, like MongoDB and CouchDB, also provide an SQL-like query language to perform complex queries.
 
 ##### Source(s) and further reading: document store
 
@@ -1146,6 +1210,14 @@ Google introduced [Bigtable](http://www.read.seas.harvard.edu/~kohler/class/cs23
 
 Wide column stores offer high availability and high scalability.  They are often used for very large data sets.
 
+Wide columns stores were inspired by the the Google Bigtable paper. The basic unit of data is a column (i.e. a name/value pair) that can be grouped in column families (roughly an SQL table) and super columns families as shown in the following image. Each column can be independently accessed using a key. Columns with the same key form a row. In a wide column store each column is persisted in a different file in order to allow a better compression rates. These file are chunked and evenly distributed all over the network. Each value comes with a timestamp that allows versioning and can be used to solve eventual conflicts between different copies of the same value. Wide Column Stores provides very high performance and can be easily scaled. In fact, they are used by popular social networks like Twitter and Facebook to store content produced by their users.
+
+##### Bigtable
+Bigtable is one of the prototypical examples of a wide column store. It maps two arbitrary string values (row key and column key) and timestamp (hence three-dimensional mapping) into an associated arbitrary byte array. It is not a relational database and can be better defined as a sparse, **distributed multi-dimensional sorted map**.
+Bigtable is designed to scale into the petabyte range across "hundreds or thousands of machines, and to make it easy to add more machines [to] the system and automatically start taking advantage of those resources without any reconfiguration".
+Google's copy of the web can be stored in a bigtable where the row key is a domain-reversed URL, and columns describe various properties of a web page, with one particular column holding the page itself. The page column can have several timestamped versions describing different copies of the web page timestamped by when they were fetched. Each cell of a bigtable can have zero or more timestamped versions of the data. Another function of the timestamp is to allow for both versioning and garbage collection of expired data.
+Tables are split into multiple tablets – segments of the table are split at certain row keys so that each tablet is a few hundred megabytes or a few gigabytes in size. A bigtable is somewhat like a mapreduce worker pool in that thousands to hundreds of thousands of tablet shards may be served by hundreds to thousands of BigTable servers. 
+
 ##### Source(s) and further reading: wide column store
 
 * [SQL & NoSQL, a brief history](http://blog.grio.com/2015/11/sql-nosql-a-brief-history.html)
@@ -1163,7 +1235,7 @@ Wide column stores offer high availability and high scalability.  They are often
 
 > Abstraction: graph
 
-In a graph database, each node is a record and each arc is a **relationship** between two nodes, which allows them to link documents for rapid traversal..  Graph databases are optimized to represent complex relationships with many foreign keys or many-to-many relationships.
+In a graph database, each node is a record and each arc is a **relationship** between two nodes, which allows them to link documents for rapid traversal..  Graph databases are optimized to represent complex relationships with many foreign keys or many-to-many relationships. Follow ACID.
 
 Graphs databases offer high performance for data models with complex relationships, such as a social network.  They are relatively new and are not yet widely-used; it might be more difficult to find development tools and resources.  Many graphs can only be accessed with [REST APIs](#representational-state-transfer-rest).
 
@@ -1209,6 +1281,7 @@ Reasons for **NoSQL**:
 * Store many TB (or PB) of data
 * Very data intensive workload
 * Very high throughput for IOPS
+* Easier development
 
 Sample data well-suited for NoSQL:
 
@@ -1222,6 +1295,13 @@ Sample data well-suited for NoSQL:
 
 * [Scaling up to your first 10 million users](https://www.youtube.com/watch?v=w95murBkYmU)
 * [SQL vs NoSQL differences](https://www.sitepoint.com/sql-vs-nosql-differences/)
+
+##### The CAP theorem and the BASE model
+SQL:
+* It can be hard to scale performance while maintaining the ACID properties
+* The fact that archived data should have a predefined structure is a limit for some applications and introduces an overhead due to potential missing values
+* The relational model was not envisioned to handle files (e.g.: images or videos), documents or large text fields.
+The main issue in a distributed system is **partitions**. A partition occurs when a node in the network is not reachable by one or more of the other nodes
 
 ## Cache
 
