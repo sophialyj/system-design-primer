@@ -331,6 +331,15 @@ class SpendingByCategory(MRJob):
 
 **Important: Do not simply jump right into the final design from the initial design!**
 
+##### Benchmark
+A benchmark is something that measures the time for some whole operation. e.g. I/O operations per second under some workload. So the result is typically a single number, in either seconds or operations per second. Or a data set with results for different parameters, so you can graph it.
+
+You might use a benchmark to compare the same software on different hardware, or different versions of some other software that your benchmark interacts with
+
+##### Profile
+Profiling is not aimed at comparing different things: it's about understanding the behaviour of a program. A profile result might be a table of time taken per function, or even per instruction with a sampling profiler. 
+You use a profile to figure out where to optimize. A 10% speedup in a function where your program spends 99% of its time is more valuable than a 100% speedup in any other function. 
+
 State you would 1) **Benchmark/Load Test**, 2) **Profile** for bottlenecks 3) address bottlenecks while evaluating alternatives and trade-offs, and 4) repeat.  See [Design a system that scales to millions of users on AWS](../scaling_aws/README.md) as a sample on how to iteratively scale the initial design.
 
 It's important to discuss what bottlenecks you might encounter with the initial design and how you might address each of them.  For example, what issues are addressed by adding a **Load Balancer** with multiple **Web Servers**?  **CDN**?  **Master-Slave Replicas**?  What are the alternatives and **Trade-Offs** for each?
