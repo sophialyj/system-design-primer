@@ -66,7 +66,7 @@ Without an interviewer to address clarifying questions, we'll define some use ca
     * 50 bytes per transaction * 5 billion transactions per month
     * 9 TB of new transaction content in 3 years
     * Assume most are new transactions instead of updates to existing ones
-* 2,000 transactions per second on average
+* 2,000 transactions per second on average .  (2.6 * 10^6 seconds per month)
 * 200 read requests per second on average
 
 Handy conversion guide:
