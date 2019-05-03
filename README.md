@@ -616,6 +616,7 @@ Sites with heavy traffic work well with pull CDNs, as traffic is spread out more
   <i><a href=http://horicky.blogspot.com/2010/10/scalable-system-design-patterns.html>Source: Scalable system design patterns</a></i>
 </p>
 performance, reliability, security, and scale
+Load balancing is the process of spreading requests across multiple resources according to some metric (random, round-robin, random with weighting for machine capacity, etc) and their current status (available for requests, not responding, elevated error rate, etc).
 Load balancers are most commonly deployed when a site needs multiple servers because the volume of requests is too much for a single server to handle efficiently. Deploying multiple servers also eliminates a single point of failure, making the website more reliable. Most commonly, the servers all host the same content, and the load balancer’s job is to distribute the workload in a way that makes the best use of each server’s capacity, prevents overload on any server, and results in the fastest possible response to the client.
 
 Load balancers distribute incoming client requests to computing resources such as application servers and databases.  In each case, the load balancer returns the response from the computing resource to the appropriate client.  Load balancers are effective at:
@@ -625,6 +626,11 @@ Load balancers distribute incoming client requests to computing resources such a
 * Helping eliminate single points of failure
 
 Load balancers can be implemented with hardware (expensive) or with software such as HAProxy.
+
+A moderately large system may balance load at three layers:
+* user to your web servers,
+* web servers to an internal platform layer,
+* internal platform layer to your database.
 
 Additional benefits include:
 
@@ -1319,10 +1325,18 @@ The main issue in a distributed system is **partitions**. A partition occurs whe
   <br/>
   <i><a href=http://horicky.blogspot.com/2010/10/scalable-system-design-patterns.html>Source: Scalable system design patterns</a></i>
 </p>
+Load balancing helps you scale horizontally across an ever-increasing number of servers, but caching will enable you to make vastly better use of the resources you already have, as well as making otherwise unattainable product requirements feasible.
+Caching consists of: precalculating results (e.g. the number of visits from each referring domain for the previous day), pre-generating expensive indexes (e.g. suggested stories based on a user's click history), and storing copies of frequently accessed data in a faster backend
 
 Caching improves page load times and can reduce the load on your servers and databases.  In this model, the dispatcher will first lookup if the request has been made before and try to find the previous result to return, in order to save the actual execution.
 
 Databases often benefit from a uniform distribution of reads and writes across its partitions.  Popular items can skew the distribution, causing bottlenecks.  Putting a cache in front of a database can help absorb uneven loads and spikes in traffic.
+
+There are two primary approaches to caching: application caching and database caching (most systems rely heavily on both).
+Application caching requires explicit integration in the application code itself. Usually it will check if a value is in the cache; if not, retrieve the value from the database; then write that value into the cache (this value is especially common if you are using a cache which observes the least recently used caching algorithm). The code typically looks like (specifically this is a read-through cache, as it reads the value from the database into the cache if it is missing from the cache).
+When you flip your database on, you're going to get some level of default configuration which will provide some degree of caching and performance. Those initial settings will be optimized for a generic usecase, and by tweaking them to your system's access patterns you can generally squeeze a great deal of performance improvement.
+
+The beauty of database caching is that your application code gets faster "for free".
 
 ### Client caching
 
@@ -1494,6 +1508,11 @@ Refresh-ahead can result in reduced latency vs read-through if the cache can acc
 * Cache invalidation is a difficult problem, there is additional complexity associated with when to update the cache.
 * Need to make application changes such as adding Redis or memcached.
 
+##### Cache invalidation
+While caching is fantastic, it does require you to maintain consistency between your caches and the source of truth (i.e. your database), at risk of truly bizarre applicaiton behavior.
+Each time a value changes, write the new value into the cache (this is called a write-through cache) or simply delete the current value from the cache and allow a read-through cache to populate it later (choosing between read and write through caches depends on your application's details, but generally I prefer write-through caches as they reduce likelihood of a stampede on your backend database).
+
+
 ### Source(s) and further reading
 
 * [From cache to in-memory data grid](http://www.slideshare.net/tmatyashovsky/from-cache-to-in-memory-data-grid-introduction-to-hazelcast)
@@ -1523,9 +1542,57 @@ Message queues receive, hold, and deliver messages.  If an operation is too slow
 
 The user is not blocked and the job is processed in the background.  During this time, the client might optionally do a small amount of processing to make it seem like the task has completed.  For example, if posting a tweet, the tweet could be instantly posted to your timeline, but it could take some time before your tweet is actually delivered to all of your followers.
 
+Off-line processing
+As a system grows more complex, it is almost always necessary to perform processing which can't be performed in-line with a client's request either because it is creates unacceptable latency (e.g. you want to want to propagate a user's action across a social graph) or it because it needs to occur periodically (e.g. want to create daily rollups of analytics).
+Message queues allow your web applications to quickly publish messages to the queue, and have other consumers processes perform the processing outside the scope and timeline of the client request.
+
+Message queueing allows web servers to respond to requests quickly instead of being forced to perform resource-heavy procedures on the spot. Message queueing is also good when you want to distribute a message to multiple recipients for consumption or for balancing loads between workers.
+
 **[Redis](https://redis.io/)** is useful as a simple message broker but messages can be lost.
 
 **[RabbitMQ](https://www.rabbitmq.com/)** is popular but requires you to adapt to the 'AMQP' protocol and manage your own nodes.
+<p align="center">
+  <img src="https://www.cloudamqp.com/img/blog/workflow-rabbitmq.png">
+  <br/>
+</p>
+
+<p align="center">
+  <img src="https://www.cloudamqp.com/img/blog/rabbitmq-beginners-updated.png">
+  <br/>
+</p>
+
+Advanced Message Queuing Protocol (AMQP) A is the protocol used by RabbitMQ for messaging.
+The consumer can be on a totally different server than the publisher, or they can be located on the same server. The request can be created in one programming language and handled in another programming language - the two applications will only communicate through the messages they are sending to each other. Due to that, the two applications will have a low coupling between the sender and the receiver.
+
+EXCHANGES
+Messages are not published directly to a queue, instead, the producer sends messages to an exchange. An exchange is responsible for the routing of the messages to the different queues. An exchange accepts messages from the producer application and routes them to message queues with the help of bindings and routing keys. A binding is a link between a queue and an exchange.
+<p align="center">
+  <img src="https://www.cloudamqp.com/img/blog/exchanges-bidings-routing-keys.png">
+  <br/>
+</p>
+
+<p align="center">
+  <img src="https://www.cloudamqp.com/img/blog/exchanges-topic-fanout-direct.png">
+  <br/>
+</p>
+##### TYPES OF EXCHANGES
+Direct: A direct exchange delivers messages to queues based on a message routing key. In a direct exchange, the message is routed to the queues whose binding key exactly matches the routing key of the message. If the queue is bound to the exchange with the binding key pdfprocess, a message published to the exchange with a routing key pdfprocess is routed to that queue.
+Fanout: A fanout exchange routes messages to all of the queues that are bound to it.
+Topic: The topic exchange does a wildcard match between the routing key and the routing pattern specified in the binding.
+Headers: Headers exchanges use the message header attributes for routing.
+
+* Producer: Application that sends the messages.
+* Consumer: Application that receives the messages.
+* Queue: Buffer that stores messages.
+* Message: Information that is sent from the producer to a consumer through RabbitMQ.
+* Connection: A connection is a TCP connection between your application and the RabbitMQ broker.
+* Channel: A channel is a virtual connection inside a connection. When you are publishing or consuming messages from a queue - it's all done over a channel.
+* Exchange: Receives messages from producers and pushes them to queues depending on rules defined by the exchange type. To receive messages, a queue needs to be bound to at least one exchange.
+* Binding: A binding is a link between a queue and an exchange.
+* Routing key: The routing key is a key that the exchange looks at to decide how to route the message to queues. The routing key is like an address for the message.
+* AMQP: AMQP (Advanced Message Queuing Protocol) is the protocol used by RabbitMQ for messaging.
+* Users: It is possible to connect to RabbitMQ with a given username and password. Every user can be assigned permissions such as rights to read, write and configure privileges within the instance. Users can also be assigned permissions to specific virtual hosts.
+* Vhost, virtual host: A Virtual host provides a way to segregate applications using the same RabbitMQ instance. Different users can have different access privileges to different vhost and queues and exchanges can be created, so they only exist in one vhost.
 
 **[Amazon SQS](https://aws.amazon.com/sqs/)** is hosted but can have high latency and has the possibility of messages being delivered twice.
 
