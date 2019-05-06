@@ -145,6 +145,29 @@ def base_encode(num, base=62):
 ```
 url = base_encode(md5(ip_address+timestamp))[:URL_LENGTH]
 ```
+#### MD5
+The MD5 message-digest algorithm is a widely used hash function producing a 128-bit hash value.  It has been found to suffer from extensive vulnerabilities. It can still be used as a checksum to verify data integrity, but only against unintentional corruption.
+One basic requirement of any cryptographic hash function is that it should be computationally infeasible to find two distinct messages that hash to the same value.
+##### Algorithm
+MD5 processes a variable-length message into a fixed-length output of 128 bits. The input message is broken up into chunks of 512-bit blocks (sixteen 32-bit words); the message is padded so that its length is divisible by 512. The padding works as follows: first a single bit, 1, is appended to the end of the message. This is followed by as many zeros as are required to bring the length of the message up to 64 bits fewer than a multiple of 512. The remaining bits are filled up with 64 bits representing the length of the original message, modulo 2^64.
+The main MD5 algorithm operates on a 128-bit state, divided into four 32-bit words, denoted A, B, C, and D. These are initialized to certain fixed constants. The main algorithm then uses each 512-bit message block in turn to modify the state.
+The 128-bit (16-byte) MD5 hashes
+MD5 hashes are no longer considered cryptographically secure, and they should not be used for cryptographic authentication.
+
+#### Base 62 encoding
+What we want to achieve is a unique bi-directional mapping of a given string (e.g. URL) and a hash.
+Furthermore, we want this unique hash to be (much) shorter than the original string.
+This is an examplary long string to be shortened <=> T4Xza
+Of course to achieve this bi-directional property, we need to be able to retrieve the original string based on the hash calculated and additionally, we must be given the same hash for the same string on every attempt. Thus, there must not exist more than one hash for the same original string and the encoding operation must be **deterministic**. 
+Use 62 letters: [a-zA-Z0-9]. As always, the indexing begins at 0.
+Database schema: 
+id : INT (primary key, auto increment) 
+hash: VARCHAR (unique) 
+url: VARCHAR 
+Each encoded url (i.e. hash) entry will be identified by a unique id.
+
+Improvement:
+This implementation is for reference only, since it (currently) lacks important checking functionality. At the moment it only checks the database for identical strings. While this is perfectly fine for normal text, when using URLs there are oftentimes multiple versions possible, e.g. http://google.com vs. http://www.google.com vs. http://www.google.com/. 
 
 We'll use a public [**REST API**](https://github.com/donnemartin/system-design-primer#representational-state-transfer-rest):
 
