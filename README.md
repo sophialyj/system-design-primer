@@ -395,6 +395,22 @@ First, you'll need a basic understanding of common principles, learning about wh
     * [Caches](http://www.lecloud.net/post/9246290032/scalability-for-dummies-part-3-cache)
     * [Asynchronism](http://www.lecloud.net/post/9699762917/scalability-for-dummies-part-4-asynchronism)
 
+There are two major bottlenecks of the whole system – requests per second (rps) and bandwidth. We could improve the situation by using more efficient tech stack, like frameworks with async and non-blocking reactor pattern, and enhancing the hardware, like scaling up (aka vertical scaling) or scaling out (aka horizontal scaling).
+Internet companies prefer scaling out, since it is more cost-efficient with a huge number of commodity machines. 
+Frontend web tier and service tier must be stateless in order to add or remove hosts conveniently, thus achieving horizontal scalability.
+
+The single responsibility principle advocates small and autonomous services that work together, so that each service can do one thing well and not block others.
+
+#### Service Discovery
+ Zookeeper is a popular and centralized choice. Instances with name, address, port, etc. are registered into the path in ZooKeeper for each service. If one service does not know where to find another service, it can query Zookeeper for the location and memorize it until that location is unavailable.
+Zookeeper is a CP system in terms of CAP theorem, which means it stays consistent in the case of failures, but the leader of the centralized consensus will be unavailable for registering new services.
+
+#### Micro Services
+For the Pinterest case, these micro services could be user profile, follower, feed, search, spam, etc.
+
+#### DataTier
+Although a relational database can do almost all the storage work, please remember do not save a blob, like a photo, into a relational database, and choose the right database for the right service. For example, read performance is important for follower service, therefore it makes sense to use a key-value cache. Feeds are generated as time passes by, so HBase / Cassandra’s timestamp index is a great fit for this use case. Users have relationships with other users or objects, so a relational database is our choice by default in an user profile service.
+ 
 ### Next steps
 
 Next, we'll look at high-level trade-offs:
@@ -678,6 +694,14 @@ Load balancers can also help with horizontal scaling, improving performance and 
 * Introducing a load balancer to help eliminate single points of failure results in increased complexity.
 * A single load balancer is a **single point of failure**, configuring multiple load balancers further increases complexity.
 
+Load Balancer
+DNS Round Robin (rarely used): clients get a randomly-ordered list of IP addresses.
+pros: easy to implement and free
+cons: hard to control and not responsive, since DNS cache needs time to expire
+L3/L4 Load Balancer: traffic is routed by IP address and port. L3 is network layer (IP). L4 is session layer (TCP).
+pros: better granularity, simple, responsive
+L7 Load Balancer: traffic is routed by what is inside the HTTP protocol. L7 is application layer (HTTP).
+
 ### Source(s) and further reading
 
 * [NGINX architecture](https://www.nginx.com/blog/inside-nginx-how-we-designed-for-performance-scale/)
@@ -699,6 +723,8 @@ Load balancers can also help with horizontal scaling, improving performance and 
 A reverse proxy taking requests from the Internet and forwarding them to servers in an internal network. Those making requests to the proxy may not be aware of the internal network.
 
 A reverse proxy is a type of proxy server that retrieves resources on behalf of a client from one or more servers. These resources are then returned to the client, appearing as if they originated from the proxy server itself.
+
+Reverse proxy, like varnish, centralizes internal services and provides unified interfaces to the public. For example, www.example.com/index and www.example.com/sports appear to come from the same domain, but in fact they are from different micro services behind the reverse proxy. Reverse proxy could also help with caching and load balancing.
 
 Additional benefits include:
 
@@ -801,6 +827,13 @@ A unit of work performed within a database management system against a database,
 * **Consistency** - Any transaction will bring the database from one valid state to another. The status of the database after each transaction should remain consistent. This means that the transaction execution should not violate any database constraints otherwise it will be aborted.
 * **Isolation** - Executing transactions concurrently has the same results as if the transactions were executed serially. if multiple transactions are accessing to the same data at the same time, the resulting database status should be the same obtained executing the transactions in a serially (i.e.: one after the other). This means that the execution of a transaction should not interfere with the others.
 * **Durability** - Transactions that complete successfully must get written to durable storage. If a transaction is successfully committed, the system status should be persistent even in case of a system failure.
+
+DB proxy:
+What if we want to eliminate single point of failure? What if the dataset is too large for one single machine to hold? For MySQL, the answer is to use a DB proxy to distribute data, either by clustering or by sharding.
+Clustering is a decentralized solution. Everything is automatic. Data is distributed, moved, rebalanced automatically. Nodes gossip with each other, (though it may cause group isolation).
+
+Sharding is a centralized solution. If we get rid of properties of clustering that we don’t like, sharding is what we get. Data is distributed manually and does not move. Nodes are not aware of each other.
+
 
 There are many techniques to scale a relational database: **master-slave replication**, **master-master replication**, **federation**, **sharding**, **denormalization**, and **SQL tuning**.
 
@@ -1220,6 +1253,7 @@ With DynamoDB, there are no servers to provision, patch, or manage, and no softw
 </p>
 
 > Abstraction: nested map `ColumnFamily<RowKey, Columns<ColKey, Value, Timestamp>>`
+The main reason we want to use a column-oriented store is that it is distributed, highly-available, and optimized for write.
 
 A wide column store's basic unit of data is a column (name/value pair).  A column can be grouped in **column families** (analogous to a SQL table).  Super column families further group column families.  You can access each column independently with a row key, and columns with the same row key form a row.  Each value contains a timestamp for versioning and for conflict resolution.
 
@@ -1277,6 +1311,9 @@ Graphs databases offer high performance for data models with complex relationshi
   <br/>
   <i><a href=https://www.infoq.com/articles/Transition-RDBMS-NoSQL/>Source: Transitioning from RDBMS to NoSQL</a></i>
 </p>
+
+To optimize the read performance, denormalization is introduced by adding redundant data or by grouping data. 
+In a regular Internet service, the read write ratio is about 100:1 to 1000:1. However, when reading from a hard disk, a database join operation is time consuming, and 99% of the time is spent on disk seek. Not to mention a distributed join operation across networks.
 
 Reasons for **SQL**:
 
@@ -1651,6 +1688,7 @@ HTTP is an application layer protocol relying on lower-level protocols such as *
 * [Difference between HTTP and TCP](https://www.quora.com/What-is-the-difference-between-HTTP-protocol-and-TCP-protocol)
 The short answer: TCP is a transport-layer protocol, and HTTP is an application-layer protocol that runs over TCP. TCP is in charge of setting up a reliable connection between two machines and HTTP uses this connection to transfer data between the server and the client. HTTP is used for transferring data while TCP is in charge of setting up a connection which should be used by HTTP in the communication process. 
 
+HTTP is in the application layer and normally TCP based, since HTTP assumes a reliable transport.
 
 To understand the difference (and a lot of other networking topics), you need to understand the idea of a layered networking model. Essentially, there are different protocols that let a computer talk at different distances and different layers of abstraction.
 
@@ -1674,8 +1712,7 @@ These are the five layers of the TCP/IP networking model, but they are really on
   <br/>
   <i><a href=http://www.wildbunny.co.uk/blog/2012/10/09/how-to-make-a-multi-player-game-part-1/>Source: How to make a multiplayer game</a></i>
 </p>
-
-TCP is a reliable connection-oriented protocol over an [IP network](https://en.wikipedia.org/wiki/Internet_Protocol).  Connection is established and terminated using a [handshake](https://en.wikipedia.org/wiki/Handshaking).  All packets sent are guaranteed to reach the destination in the original order and without corruption through:
+TCP is a reliable connection-oriented protocol over an [IP network](https://en.wikipedia.org/wiki/Internet_Protocol).  Connection is established and terminated using a [handshake](https://en.wikipedia.org/wiki/Handshaking). If connection lost, the server will request the lost part. There is no corruption while transferring a message. All packets sent are guaranteed to reach the destination in the original order and without corruption through:
 
 * Sequence numbers and [checksum fields](https://en.wikipedia.org/wiki/Transmission_Control_Protocol#Checksum_computation) for each packet
 * [Acknowledgement](https://en.wikipedia.org/wiki/Acknowledgement_(data_networks)) packets and automatic retransmission
@@ -1687,11 +1724,13 @@ If the sender does not receive a correct response, it will resend the packets.  
 Flow control is the process of managing the rate of data transmission between two nodes to prevent a fast sender from overwhelming a slow receiver. 
 Congestion control modulates traffic entry into a telecommunications network in order to avoid congestive collapse resulting from oversubscription. This is typically accomplished by reducing the rate of packets. Whereas congestion control prevents senders from overwhelming the network, flow control prevents the sender from overwhelming the receiver.
 
+Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call.
+
 A connection pool is a cache of database connections maintained so that the connections can be reused when future requests to the database are required. Connection pools are used to enhance the performance of executing commands on a database. Opening and maintaining a database connection for each user, especially requests made to a dynamic database-driven website application, is costly and wastes resources.
 
 To ensure high throughput, web servers can keep a large number of TCP connections open, resulting in high memory usage.  It can be expensive to have a large number of open connections between web server threads and say, a [memcached](https://memcached.org/) server.  [Connection pooling](https://en.wikipedia.org/wiki/Connection_pool) can help in addition to switching to UDP where applicable.
 
-TCP is useful for applications that require high reliability but are less time critical.  Some examples include web servers, database info, SMTP, FTP, and SSH.
+TCP is useful for applications that require high reliability but are less time critical.  Some examples include web servers, database info, SMTP, FTP, email, and SSH.
 
  It’s also a stream protocol, so TCP automatically splits your data into packets and sends them over the network for you.
 
@@ -1715,7 +1754,8 @@ Easy to use, you just read and write data like its a file
   <i><a href=http://www.wildbunny.co.uk/blog/2012/10/09/how-to-make-a-multi-player-game-part-1/>Source: How to make a multiplayer game</a></i>
 </p>
 
-UDP is connectionless.  Datagrams (analogous to packets) are guaranteed only at the datagram level.  Datagrams might reach their destination out of order or not at all.  UDP does not support congestion control.  Without the guarantees that TCP support, UDP is generally more efficient.
+UDP is connectionless protocol. When you a send a data or message, you don’t know if it’ll get there, it could get lost on the way. There may be corruption while transferring a message. Datagrams (analogous to packets) are guaranteed only at the datagram level.  Datagrams might reach their destination out of order or not at all.  UDP does not support congestion control.  Without the guarantees that TCP support, UDP is generally more efficient.
+Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call.
 
 UDP can broadcast, sending datagrams to all devices on the subnet.  This is useful with [DHCP](https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol) because the client has not yet received an IP address, thus preventing a way for TCP to stream without the IP address.
 
@@ -1763,6 +1803,9 @@ My recommendation is not only that you use UDP, but that you only use UDP for yo
   <br/>
   <i><a href=http://www.puncsky.com/blog/2016-02-13-crack-the-system-design-interview>Source: Crack the system design interview</a></i>
 </p>
+*Stub procedure: a local procedure that marshals the procedure identifier and the arguments into a request message, and then to send via its communication module to the server. When the reply message arrives, it unmarshals the results.
+
+RPC, an application layer protocol, is an inter-process communication that allows a computer program to cause a subroutine or procedure to execute in another address space (commonly on another computer on a shared network), without the programmer explicitly coding the details for this remote interaction.
 
 In an RPC, a client causes a procedure to execute on a different address space, usually a remote server.  The procedure is coded as if it were a local procedure call, abstracting away the details of how to communicate with the server from the client program.  Remote calls are usually slower and less reliable than local calls so it is helpful to distinguish RPC calls from local calls.  Popular RPC frameworks include [Protobuf](https://developers.google.com/protocol-buffers/), [Thrift](https://thrift.apache.org/), and [Avro](https://avro.apache.org/docs/current/).
 
@@ -1805,7 +1848,18 @@ HTTP APIs following **REST** tend to be used more often for public APIs.
 * It can be difficult to debug RPC.
 * You might not be able to leverage existing technologies out of the box.  For example, it might require additional effort to ensure [RPC calls are properly cached](http://etherealbits.com/2012/12/debunking-the-myths-of-rpc-rest/) on caching servers such as [Squid](http://www.squid-cache.org/).
 
+We do not have to implement our own RPC protocols. There are off-the-shelf frameworks.
+Google Protobuf: an open source RPC with only APIs but no RPC implementations. Smaller serialized data and slightly faster. Better documentations and cleaner APIs.
+Facebook Thrift: supports more languages, richer data structures: list, set, map, etc. that Protobuf does not support) Incomplete documentation and hard to find good examples.
+User case: Hbase/Cassandra/Hypertable/Scrib/…
+
 ### Representational state transfer (REST)
+* Best practice of HTTP API to interact with resources.
+* URL only decides the location. Headers (Accept and Content-Type, etc.) decide the representation. HTTP methods(GET/POST/PUT/DELETE) decide the state transfer.
+* Minimize the coupling between client and server.
+* stateless and scaling out.
+* service partitioning feasible.
+* Used for public API.
 
 REST is an architectural style enforcing a client/server model where the client acts on a set of resources managed by the server.  The server provides a representation of resources and actions that can either manipulate or get a new representation of resources.  All communication must be stateless and cacheable.
 
