@@ -2193,3 +2193,31 @@ My contact info can be found on my [GitHub page](https://github.com/donnemartin)
     Creative Commons Attribution 4.0 International License (CC BY 4.0)
 
     http://creativecommons.org/licenses/by/4.0/
+
+#### Red-black tree
+A red–black tree is a kind of self-balancing binary search tree in computer science. Each node of the binary tree has an extra bit, and that bit is often interpreted as the color (red or black) of the node. These color bits are used to ensure the tree remains approximately balanced during insertions and deletions. Search in O(logn)
+* Each node is either red or black.
+* The root is black. This rule is sometimes omitted. Since the root can always be changed from red to black, but not necessarily vice versa, this rule has little effect on analysis.
+* All leaves (NIL) are black.
+* If a node is red, then both its children are black.
+* Every path from a given node to any of its descendant NIL nodes contains the same number of black nodes.
+
+#### B+ Tree 
+B+ Tree is an extension of B Tree which allows efficient insertion, deletion and search operations.
+In B Tree, Keys and records both can be stored in the internal as well as leaf nodes. Whereas, in B+ tree, records (data) can only be stored on the leaf nodes while internal nodes can only store the key values.
+The leaf nodes of a B+ tree are linked together in the form of a singly linked lists to make the search queries more efficient.
+B+ Tree are used to store the large amount of data which can not be stored in the main memory. Due to the fact that, size of main memory is always limited, the internal nodes (keys to access records) of the B+ tree are stored in the main memory whereas, leaf nodes are stored in the secondary memory.
+* Records can be fetched in equal number of disk accesses.
+* Height of the tree remains balanced and less as compare to B tree.
+* We can access the data stored in a B+ tree sequentially as well as directly.
+* Keys are used for indexing.
+* Faster search queries as the data is stored only on the leaf nodes.
+<p align="center">
+  <img src="https://static.javatpoint.com/ds/images/b-plus-tree.png">
+</p>
+#### B Tree Vs B+ Tree
+* Search keys can not be repeatedly stored.	 Vs. Redundant search keys can be present.
+*	Data can be stored in leaf nodes as well as internal nodes	vs. Data can only be stored on the leaf nodes.
+*	Searching for some data is a slower process since data can be found on internal nodes as well as on the leaf nodes.	vs. Searching is comparatively faster as data can only be found on the leaf nodes.
+*	Deletion of internal nodes are so complicated and time consuming.	vs. Deletion will never be a complexed process since element will always be deleted from the leaf nodes.
+*	Leaf nodes can not be linked together.	vs. Leaf nodes are linked together to make the search operations more efficient.
