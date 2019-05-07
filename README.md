@@ -2032,6 +2032,14 @@ Handy metrics based on numbers above:
 | Design an API rate limiter | [https://stripe.com/blog/](https://stripe.com/blog/rate-limiters) |
 | Add a system design question | [Contribute](#contributing) |
 
+#### Online multiplayer game
+Server-client model
+The client and server both maintain a copy of the game universe; the server has the master copy and then client has a (possibly partial) copy for local simulation and display purposes. The reason for this separation of authority is to prevent cheating.
+The fundamental component of a multi-player game is the server. In this case it's a socket-server since clients will be connecting via sockets. A socket is just an access channel for communication over a persistent connection between computers on a network. This is different to HTTP (which is how you are reading this article right now), which is a request/response protocol with no persistent connection.
+The most interesting aspect of the above server is the data event, which indicates that data has arrived for processing - this is how the client and server will communicate primarily. Note that it does not mean a message has arrived, just that some amount of data is present to be read. It could be part of a message sent from a client, or it could be several messages together. The reason for this is that TCP is a stream oriented protocol, not a message oriented one. We need to do a little bit of work to build our own message protocol on top of this.
+The message protocol
+We would like the server to notify us when individual messages get received from the client. In order to do this we must design a simple message protocol. The one I've chosen for this tutorial is a simple UTF8 string based protocol with a terminating character separating each message. e.g. message/n
+
 ### Real world architectures
 
 > Articles on how real world systems are designed.
