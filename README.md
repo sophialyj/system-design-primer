@@ -385,6 +385,9 @@ First, you'll need a basic understanding of common principles, learning about wh
     * Database replication
     * Database partitioning
 
+Distributed system: a collection of independent computers that appear to its users as one computer.
+Operate concurrently; fail independently; do not share a global clock
+
 ### Step 2: Review the scalability article
 
 [Scalability](http://www.lecloud.net/tagged/scalability/chrono)
@@ -650,6 +653,8 @@ A moderately large system may balance load at three layers:
 * web servers to an internal platform layer,
 * internal platform layer to your database.
 
+DNS: geographical load balancing
+
 Additional benefits include:
 
 * **SSL termination** - Decrypt incoming requests and encrypt server responses so backend servers do not have to perform these potentially expensive operations
@@ -695,12 +700,17 @@ Load balancers can also help with horizontal scaling, improving performance and 
 * A single load balancer is a **single point of failure**, configuring multiple load balancers further increases complexity.
 
 Load Balancer
-DNS Round Robin (rarely used): clients get a randomly-ordered list of IP addresses.
+DNS Round Robin (rarely used, 1->2->3->...->n): clients get a randomly-ordered list of IP addresses.
 pros: easy to implement and free
-cons: hard to control and not responsive, since DNS cache needs time to expire
+cons: hard to control and not responsive, since DNS cache needs time to expire (Too much load onto certain servers)
 L3/L4 Load Balancer: traffic is routed by IP address and port. L3 is network layer (IP). L4 is session layer (TCP).
 pros: better granularity, simple, responsive
 L7 Load Balancer: traffic is routed by what is inside the HTTP protocol. L7 is application layer (HTTP).
+
+Storing session. Session stickyness (shared storage, cookie - finite size, id of the server - cons: the ip of the server might change, privacy. Store big number and let the load balancer remember/figure out what the ip adress.). The same person is sent to the same session in a period of time. cookie Thinking about shopping cart
+Shared State. Sacrifice redundancy. 
+RAID0(Two identical hardrives, seqentially write to mechanical hardrive, increase speed)/RAID1(Mirror data, write to both places, provide redundancy)/RAID10(combination of 0 and 1)/RAID5(3-5 drives, only 1 for redundancy)/RAID6(Any two drives can die)... Redundant Array of Inexpensive Disks or Drives . --> decrease the probability of down time
+
 
 ### Source(s) and further reading
 
@@ -982,6 +992,8 @@ To create a complex friends page, or a user profile page, or a thread discussion
 
 
 ##### Consistent Hashing
+key --- hash function --> where to read and write, replicate on the next two nodes
+Strong consistency: R + W > N(number of replicas)
 Here you have a number of nodes in a cluster of databases, or in a cluster of web caches. How do you figure out where the data for a particular key goes in that cluster -- consistent hashing. The same key will always return the same hash code.
 Since the overall hashtable is distributed across many VNs, we need a way to map each key to the corresponding VN.
 One way is to use
@@ -1730,7 +1742,7 @@ A connection pool is a cache of database connections maintained so that the conn
 
 To ensure high throughput, web servers can keep a large number of TCP connections open, resulting in high memory usage.  It can be expensive to have a large number of open connections between web server threads and say, a [memcached](https://memcached.org/) server.  [Connection pooling](https://en.wikipedia.org/wiki/Connection_pool) can help in addition to switching to UDP where applicable.
 
-TCP is useful for applications that require high reliability but are less time critical.  Some examples include web servers, database info, SMTP, FTP, email, and SSH.
+TCP is useful for applications that require high reliability but are less time critical.  Some examples include web servers, database info, SMTP, FTP, email, and SSH.  SFTP(encrypted)
 
  It’s also a stream protocol, so TCP automatically splits your data into packets and sends them over the network for you.
 
