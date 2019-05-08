@@ -398,6 +398,17 @@ Operate concurrently; fail independently; do not share a global clock
     * [Caches](http://www.lecloud.net/post/9246290032/scalability-for-dummies-part-3-cache)
     * [Asynchronism](http://www.lecloud.net/post/9699762917/scalability-for-dummies-part-4-asynchronism)
 
+Stateless: Every server contains exactly the same codebase and does not store any user-related data, like sessions or profile pictures, on local disc or memory. 
+Sessions need to be stored in a centralized data store which is accessible to all your application servers. It can be an external database or an external persistent cache, like Redis. 
+
+#### Asynchronism
+* Doing the time-consuming work in advance and serving the finished work with a low request time.
+Very often this paradigm is used to turn dynamic content into static content. 
+This pre-computing of overall general data can extremely improve websites and web apps and makes them very scalable and performant. 
+* Handle tasks asynchronously.
+A user comes to your website and starts a very computing intensive task which would take several minutes to finish. So the frontend of your website sends a job onto a job queue and immediately signals back to the user: your job is in work, please continue to the browse the page. The job queue is constantly checked by a bunch of workers for new jobs. If there is a new job then the worker does the job and after some minutes sends a signal that the job was done. The frontend, which constantly checks for new “job is done” - signals, sees that the job was done and informs the user about it. I know, that was a very simplified example. 
+RabbitMQ is one of many systems which help to implement async processing. You could also use ActiveMQ or a simple Redis list.
+
 There are two major bottlenecks of the whole system – requests per second (rps) and bandwidth. We could improve the situation by using more efficient tech stack, like frameworks with async and non-blocking reactor pattern, and enhancing the hardware, like scaling up (aka vertical scaling) or scaling out (aka horizontal scaling).
 Internet companies prefer scaling out, since it is more cost-efficient with a huge number of commodity machines. 
 Frontend web tier and service tier must be stateless in order to add or remove hosts conveniently, thus achieving horizontal scalability.
