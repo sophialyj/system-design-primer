@@ -2241,3 +2241,173 @@ B+ Tree are used to store the large amount of data which can not be stored in th
 *	Searching for some data is a slower process since data can be found on internal nodes as well as on the leaf nodes.	vs. Searching is comparatively faster as data can only be found on the leaf nodes.
 *	Deletion of internal nodes are so complicated and time consuming.	vs. Deletion will never be a complexed process since element will always be deleted from the leaf nodes.
 *	Leaf nodes can not be linked together.	vs. Leaf nodes are linked together to make the search operations more efficient.
+
+#### Firewall
+
+#### Distributed hash table system
+
+## Operation System
+#### Program
+Programs are typically stored on disk or in non-volatile memory in a form that can be executed by your computer. 
+they are created using a programming language such as C, Lisp, Pascal, or many others using instructions that involve logic, data and device manipulation, recurrence, and user interaction. The end result is a text file of code that is compiled into binary form (1’s and 0’s) in order to run on the computer. Another type of program is called “interpreted,” and instead of being compiled in advance in order to run, is interpreted into executable code at the time it is run.
+When a program is run, it is loaded into memory in binary form. The computer’s CPU (Central Processing Unit) understands only binary instructions, so that’s the form the program needs to be in when it runs.
+Binary is the native language of computers because an electrical circuit at its basic level has two states, on or off, represented by a one or a zero. 
+
+
+#### Process
+A “process” is what we call a program that has been loaded into memory along with all the resources it needs to operate. The “operating system” is the brains behind allocating all these resources, and comes in different flavors such as macOS, iOS, Microsoft Windows, Linux, and Android. The OS handles the task of managing the resources needed to turn your program into a running process.
+
+Some essential resources every process needs are **registers, a program counter, and a stack**. The “registers” are data holding places that are part of the computer processor (CPU). A register may hold an instruction, a storage address, or other kind of data needed by the process. The “program counter,” also called the “instruction pointer,” keeps track of where a computer is in its program sequence. The “stack” is a data structure that stores information about the active subroutines of a computer program and is used as scratch space for the process. It is distinguished from dynamically allocated memory for the process that is known as the “heap.”
+There can be multiple instances of a single program, and each instance of that running program is a process. Each process has a separate memory address space, which means that a process runs independently and is isolated from other processes. It cannot directly access shared data in other processes. Switching from one process to another requires some time (relatively) for saving and loading registers, memory maps, and other resources.
+
+This independence of processes is valuable because the operating system tries its best to isolate processes so that a problem with one process doesn’t corrupt or cause havoc with another process. You’ve undoubtedly run into the situation in which one application on your computer freezes or has a problem and you’ve been able to quit that program without affecting others.
+<p align="center">
+  <img src="https://www.backblaze.com/blog/wp-content/uploads/2017/08/diagram-thread-codestack.png">
+</p>
+In computing, a process is the instance of a computer program that is being executed by one or many threads. It contains the program code and its activity. Depending on the operating system (OS), a process may be made up of multiple threads of execution that execute instructions concurrently. While a computer program is a passive collection of instructions, a process is the actual execution of those instructions. 
+Multitasking is a method to allow multiple processes to share processors (CPUs) and other system resources. Each CPU (core) executes a single task at a time. However, multitasking allows each processor to switch between tasks that are being executed without having to wait for each task to finish. Execution of multiple processes simultaneously is called concurrency.
+For security and reliability, most modern operating systems prevent direct communication between independent processes, providing strictly mediated and controlled inter-process communication functionality.
+A multitasking operating system may just switch between processes to give the appearance of many processes executing simultaneously (that is, in parallel), though in fact only one process can be executing at any one time on a single CPU (unless the CPU has multiple cores, then multithreading or other similar technologies can be used).
+If a process requests something for which it must wait, it will be blocked. When the process is in the blocked state, it is eligible for swapping to disk, but this is transparent in a virtual memory system, where regions of a process's memory may be really on disk and not in main memory at any time. Note that even portions of active processes/tasks (executing programs) are eligible for swapping to disk, if the portions have not been used recently. Not all parts of an executing program and its data have to be in physical memory for the associated process to be active.
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Process_states.svg">
+</p>
+* First, the process is "created" by being loaded from a secondary storage device (hard disk drive, CD-ROM, etc.) into main memory. After that the process scheduler assigns it the "waiting" state.
+* While the process is "waiting", it waits for the scheduler to do a so-called context switch and load the process into the processor. The process state then becomes "running", and the processor executes the process instructions.
+* If a process needs to wait for a resource (wait for user input or file to open, for example), it is assigned the "blocked" state. The process state is changed back to "waiting" when the process no longer needs to wait (in a blocked state).
+* Once the process finishes execution, or is terminated by the operating system, it is no longer needed. The process is removed instantly or is moved to the "terminated" state. When removed, it just waits to be removed from main memory.
+
+#### Thread
+A thread is the unit of execution within a process. A process can have anywhere from just one thread to many threads.
+In general, a thread is contained inside a process and different threads in the same process share same resources while different processes in the same multitasking operating system do not. Threads are lightweight, in terms of the system resources they consume, as compared with processes.
+When a process starts, it is assigned memory and resources. Each thread in the process shares that memory and resources. In single-threaded processes, the process contains one thread. The process and the thread are one and the same, and there is only one thing happening.
+
+In multithreaded processes, the process contains more than one thread, and the process is accomplishing a number of things at the same time (technically, sometimes it’s almost at the same time
+
+<p align="center">
+  <img src="https://www.backblaze.com/blog/wp-content/uploads/2017/08/diagram-threads.png">
+</p>
+We talked about the two types of memory available to a process or a thread, the stack and the heap. It is important to distinguish between these two types of process memory because each thread will have its own stack, but all the threads in a process will share the heap.
+Threads are sometimes called lightweight processes because they have their own stack but can access shared data. Because threads share the same address space as the process and other threads within the process, the operational cost of communication between the threads is low, which is an advantage. The disadvantage is that a problem with one thread in a process will certainly affect other threads and the viability of the process itself.
+
+1. The program starts out as a text file of programming code,
+2. The program is compiled or interpreted into binary form,
+3. The program is loaded into memory,
+4. The program becomes one or more running processes.
+5. Processes are typically independent of each other,
+6. While threads exist as the subset of a process.
+7. Threads can communicate with each other more easily than processes can,
+8. But threads are more vulnerable to problems caused by other threads in the same process.
+
+The terms parallelism (genuine simultaneous execution) and **concurrency** (interleaving of processes in time to give the appearance of simultaneous execution), distinguish between the two types of real or approximate simultaneous operation.
+
+When Google was designing the Chrome browser, they needed to decide how to handle the many different tasks that needed computer, communications, and network resources at the same time. Each browser window or tab communicates with multiple servers on the internet to retrieve text, programs, graphics, audio, video, and other resources, and renders that data for display and interaction with the user. In addition, the browser can open many windows, each with many tasks.
+
+Google had to decide how to handle that separation of tasks. They chose to run each browser window in Chrome as a separate process rather than a thread or many threads, as is common with other browsers. Doing that brought Google a number of benefits. Running each window as a process protects the overall application from bugs and glitches in the rendering engine and restricts access from each rendering engine process to others and to the rest of the system. Isolating a JavaScript program in a process prevents it from running away with too much CPU time and memory and making the entire browser non-responsive.
+
+Google made a calculated trade-off with the multi-processing design. Starting a new process for each browser window has a higher fixed cost in memory and resources than using threads. They were betting that their approach would end up with less memory bloat overall.
+
+Using processes instead of threads also provides better memory usage when memory gets low. An inactive window is treated as a lower priority by the operating system and becomes eligible to be swapped to disk when memory is needed for other processes. That helps keep the user-visible windows more responsive. If the windows were threaded, it would be more difficult to separate the used and unused memory as cleanly, wasting both memory and performance.
+
+#### Kernal
+The kernel is a computer program that is the core of a computer's operating system, with complete control over everything in the system.
+On most systems, it is one of the first programs loaded on start-up (after the bootloader). It handles the rest of start-up as well as input/output requests from software, translating them into data-processing instructions for the central processing unit. It handles memory and peripherals like keyboards, monitors, printers, and speakers.
+The critical code of the kernel is usually loaded into a separate area of memory, which is protected from access by application programs or other, less critical parts of the operating system. The kernel performs its tasks, such as running processes, managing hardware devices such as the hard disk, and handling interrupts, in this protected kernel space. In contrast, everything a user does is in user space: writing text in a text editor, running programs in a GUI, etc. This separation prevents user data and kernel data from interfering with each other and causing instability and slowness, as well as preventing malfunctioning application programs from crashing the entire operating system.
+The kernel's interface is a low-level abstraction layer. When a process makes requests of the kernel, it is called a system call. Kernel designs differ in how they manage these system calls and resources. 
+
+#### Context Switch
+A context switch is the process of storing the state of a process or of a thread, so that it can be restored and execution resumed from the same point later. This allows multiple processes to share a single CPU, and is an essential feature of a multitasking operating system.
+In a multitasking context, it refers to the process of storing the system state for one task, so that task can be paused and another task resumed. A context switch can also occur as the result of an interrupt, such as when a task needs to access disk storage, freeing up CPU time for other tasks. Some operating systems also require a context switch to move between user mode and kernel mode tasks. The process of context switching can have a negative impact on system performance, although the size of this effect depends on the nature of the switch being performed.
+
+#### Lock
+A lock or mutex (from mutual exclusion) is a synchronization mechanism for enforcing limits on access to a resource in an environment where there are many threads of execution. A lock is designed to enforce a mutual exclusion concurrency control policy.
+Locks are advisory locks, where each thread cooperates by acquiring the lock before accessing the corresponding data. Some systems also implement mandatory locks, where attempting unauthorized access to a locked resource will force an exception in the entity attempting to make the access.
+The simplest type of lock is a binary semaphore. It provides exclusive access to the locked data. Other schemes also provide shared access for reading data. Other widely implemented access modes are exclusive, intend-to-exclude and intend-to-upgrade.
+
+#### Semaphore
+A semaphore is a variable or abstract data type used to control access to a common resource by multiple processes in a concurrent system such as a multitasking operating system. 
+A trivial semaphore is a plain variable that is changed (for example, incremented or decremented, or toggled) depending on programmer-defined conditions.
+Semaphores is a record of how many units of a particular resource are available, coupled with operations to adjust that record safely (i.e. to avoid race conditions) as units are required or become free, and, if necessary, wait until a unit of the resource becomes available.
+Semaphores are a useful tool in the prevention of race conditions; however, their use is by no means a guarantee that a program is free from these problems. Semaphores which allow an arbitrary resource count are called counting semaphores, while semaphores which are restricted to the values 0 and 1 (or locked/unlocked, unavailable/available) are called binary semaphores and are used to implement locks.
+When used to control access to a pool of resources, a semaphore tracks only how many resources are free; it does not keep track of which of the resources are free. Some other mechanism (possibly involving more semaphores) may be required to select a particular free resource.
+The success of the protocol requires applications to follow it correctly. Fairness and safety are likely to be compromised (which practically means a program may behave slowly, act erratically, hang or crash) if even a single process acts incorrectly. This includes:
+* requesting a resource and forgetting to release it;
+* releasing a resource that was never requested;
+* holding a resource for a long time without needing it;
+* using a resource without requesting it first (or after releasing it).
+Even if all processes follow these rules, multi-resource deadlock may still occur when there are different resources managed by different semaphores and when processes need to use more than one resource at a time.
+Many operating systems provide efficient semaphore primitives that unblock a waiting process when the semaphore is incremented. This means that processes do not waste time checking the semaphore value unnecessarily.
+The counting semaphore concept can be extended with the ability to claim or return more than one "unit" from the semaphore, a technique implemented in Unix. The modified V and P operations are as follows, using square brackets to indicate atomic operations, i.e., operations which appear indivisible from the perspective of other processes:
+function V(semaphore S, integer I):
+    [S ← S + I]
+
+function P(semaphore S, integer I):
+    repeat:
+        [if S ≥ I:
+        S ← S − I
+        break]
+To avoid starvation, a semaphore has an associated queue of processes (usually with FIFO semantics). If a process performs a P operation on a semaphore that has the value zero, the process is added to the semaphore's queue and its execution is suspended. When another process increments the semaphore by performing a V operation, and there are processes on the queue, one of them is removed from the queue and resumes execution. When processes have different priorities the queue may be ordered by priority, so that the highest priority process is taken from the queue first.        
+        
+##### Semantics and implementation
+A simple way to understand wait (P) and signal (V) operations is:
+wait: Decrements the value of semaphore variable by 1. If the new value of the semaphore variable is negative, the process executing wait is blocked (i.e., added to the semaphore's queue). Otherwise, the process continues execution, having used a unit of the resource.
+signal: Increments the value of semaphore variable by 1. After the increment, if the pre-increment value was negative (meaning there are processes waiting for a resource), it transfers a blocked process from the semaphore's waiting queue to the ready queue.
+
+##### Trivial example
+Consider a variable A and a boolean variable S. A is only accessed when S is marked true. Thus, S is a semaphore for A.
+
+##### Log Queue
+Consider a system that can only support ten users (S=10). Whenever a user logs in, P is called, decrementing the semaphore S by 1. Whenever a user logs out, V is called, incrementing S by 1 representing a login slot that has become available. When S is 0, any users wishing to log in must wait until S > 0 and the login request is enqueued onto a FIFO queue; mutual exclusion is used to ensure that requests are enqueued in order. Whenever S becomes greater than 0 (login slots available), a login request is dequeued, and the user owning the request is allowed to log in.
+
+##### Producer–consumer problem
+In the producer–consumer problem, one process (the producer) generates data items and another process (the consumer) receives and uses them. They communicate using a queue of maximum size N and are subject to the following conditions:
+* the consumer must wait for the producer to produce something if the queue is empty;
+* the producer must wait for the consumer to consume something if the queue is full.
+The semaphore solution to the producer–consumer problem tracks the state of the queue with two semaphores: emptyCount, the number of empty places in the queue, and fullCount, the number of elements in the queue. To maintain integrity, emptyCount may be lower (but never higher) than the actual number of empty places in the queue, and fullCount may be lower (but never higher) than the actual number of items in the queue. Empty places and items represent two kinds of resources, empty boxes and full boxes, and the semaphores emptyCount and fullCount maintain control over these resources.
+
+The binary semaphore useQueue ensures that the integrity of the state of the queue itself is not compromised, for example by two producers attempting to add items to an empty queue simultaneously, thereby corrupting its internal state. Alternatively a mutex could be used in place of the binary semaphore.
+
+The emptyCount is initially N, fullCount is initially 0, and useQueue is initially 1.
+#### Mutex Vs. Semaphores
+A mutex is a locking mechanism that sometimes uses the same basic implementation as the binary semaphore. The differences between them are in how they are used. While a binary semaphore may be colloquially referred to as a mutex, a true mutex has a more specific use-case and definition, in that only the task that locked the mutex is supposed to unlock it. This constraint aims to handle some potential problems of using semaphores:
+1. Priority inversion: If the mutex knows who locked it and is supposed to unlock it, it is possible to promote the priority of that task whenever a higher-priority task starts waiting on the mutex.
+2.Premature task termination: Mutexes may also provide deletion safety, where the task holding the mutex cannot be accidentally deleted.
+3. Termination deadlock: If a mutex-holding task terminates for any reason, the OS can release the mutex and signal waiting tasks of this condition.
+4. Recursion deadlock: a task is allowed to lock a reentrant mutex multiple times as it unlocks it an equal number of times.
+5. Accidental release: An error is raised on the release of the mutex if the releasing task is not its owner.
+
+#### Deadlock
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Process_states.svg">
+</p>
+Both processes need resources to continue execution. P1 requires additional resource R1 and is in possession of resource R2, P2 requires additional resource R2 and is in possession of R1; neither process can continue.
+A deadlock is a state in which each member of a group is waiting for another member, including itself, to take action, such as sending a message or more commonly releasing a lock.
+
+In an operating system, a deadlock occurs when a process or thread enters a waiting state because a requested system resource is held by another waiting process, which in turn is waiting for another resource held by another waiting process. If a process is unable to change its state indefinitely because the resources requested by it are being used by another waiting process, then the system is said to be in a deadlock.
+
+##### Deadlock handling
+* Ignore deadlock, it is assumed that a deadlock will never occur. used by UNIX. This is used when the time intervals between occurrences of deadlocks are large and the data loss incurred each time is tolerable.
+* Detection
+An algorithm is employed that tracks resource allocation and process states, it rolls back and restarts one or more of the processes in order to remove the detected deadlock. 
+After a deadlock is detected: 1. Process termination: one or more processes involved in the deadlock may be aborted.One could choose to abort all competing processes involved in the deadlock. This ensures that deadlock is resolved with certainty and speed. But the expense is high as partial computations will be lost. Or, one could choose to abort one process at a time until the deadlock is resolved. This approach has high overhead because after each abort an algorithm must determine whether the system is still in deadlock. Several factors must be considered while choosing a candidate for termination, such as priority and age of the process.
+* Prevention
+- Removing the mutual exclusion condition means that no process will have exclusive access to a resource. This proves impossible for resources that cannot be spooled. But even with spooled resources, deadlock could still occur. Algorithms that avoid mutual exclusion are called non-blocking synchronization algorithms.
+- The hold and wait or resource holding conditions may be removed by requiring processes to request all the resources they will need before starting up (or before embarking upon a particular set of operations). This advance knowledge is frequently difficult to satisfy and, in any case, is an inefficient use of resources. Another way is to require processes to request resources only when it has none. Thus, first they must release all their currently held resources before requesting all the resources they will need from scratch. This too is often impractical. It is so because resources may be allocated and remain unused for long periods. Also, a process requiring a popular resource may have to wait indefinitely, as such a resource may always be allocated to some process, resulting in resource starvation.
+- The no preemption condition may also be difficult or impossible to avoid as a process has to be able to have a resource for a certain amount of time, or the processing outcome may be inconsistent or thrashing may occur. However, inability to enforce preemption may interfere with a priority algorithm. Preemption of a "locked out" resource generally implies a rollback, and is to be avoided, since it is very costly in overhead. Algorithms that allow preemption include lock-free and wait-free algorithms and optimistic concurrency control. If a process holding some resources and requests for some another resource(s) that cannot be immediately allocated to it, the condition may be removed by releasing all the currently being held resources of that process.
+- The final condition is the circular wait condition. Approaches that avoid circular waits include disabling interrupts during critical sections and using a hierarchy to determine a partial ordering of resources.
+
+#### Livelock
+In concurrent computing, a deadlock is a state in which each member of a group of actions, is waiting for some other member to release a lock
+
+A livelock is similar to a deadlock, except that the states of the processes involved in the livelock constantly change with regard to one another, none progressing. Livelock is a special case of resource starvation; the general definition only states that a specific process is not progressing.
+
+A real-world example of livelock occurs when two people meet in a narrow corridor, and each tries to be polite by moving aside to let the other pass, but they end up swaying from side to side without making any progress because they both repeatedly move the same way at the same time.
+
+Livelock is a risk with some algorithms that detect and recover from deadlock. If more than one process takes action, the deadlock detection algorithm can be repeatedly triggered. This can be avoided by ensuring that only one process (chosen randomly or by priority) takes action.
+
+#### Starvation:
+In computer science, resource starvation is a problem encountered in concurrent computing where a process is perpetually denied necessary resources to process its work.[1] Starvation may be caused by errors in a scheduling or mutual exclusion algorithm, but can also be caused by resource leaks, and can be intentionally caused via a denial-of-service attack such as a fork bomb.
+
+#### Mutual Exclusion
+Mutual exclusion is a property of concurrency control, which is instituted for the purpose of preventing race conditions; it is the requirement that one thread of execution never enters its critical section at the same time that another concurrent thread of execution enters its own critical section.
+A race condition is an undesirable situation that occurs when a device or system attempts to perform two or more operations at the same time, but because of the nature of the device or system, the operations must be done in the proper sequence to be done correctly.
