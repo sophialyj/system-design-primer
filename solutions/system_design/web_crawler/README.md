@@ -10,6 +10,12 @@
 
 Without an interviewer to address clarifying questions, we'll define some use cases and constraints.
 
+#### Reverse index
+Reverse index is a version of a b-tree index, and is particularly useful when it comes to indexing sequence numbers and high volume processing systems. Unlike other b-tree structures, reverse indexes reverses the key value before entering it in the index.
+If the application inserts values in sequence, each insert must have access to the newest block in the index in order to add the new value. If many users attempt to insert at the same time, they all must write to that block and have to get in line, slowing down the application. This is particularly a problem in clustered databases, which may require the block to be copied from one computer's memory to another's to allow the next user to perform their insert.
+Reversing the key spreads similar new values across the entire index instead of concentrating them in any one leaf block. This means that 24538 appears on the same block as 14538 while 24539 goes to a different block, eliminating this cause of contention.
+Reverse indexes are just as efficient as unreversed indexes for finding specific values, although they aren't helpful for range queries. Range queries are uncommon for artificial values such as sequence numbers. When searching the index, the query processor simply reverses the search target before looking it up.
+
 ### Use cases
 
 #### We'll scope the problem to handle only the following use cases
