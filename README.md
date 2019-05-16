@@ -253,7 +253,8 @@ Dive into details for each core component.  For example, if you were asked to [d
     * Database lookup
 * API and object-oriented design
 
-
+#### Hash collision:
+A Hash Collision Attack is an attempt to find two input strings of a hash function that produce the same hash result. Because hash functions have infinite input length and a predefined output length, there is inevitably going to be the possibility of two different inputs that produce the same output hash.
 
 ### Step 4: Scale the design
 
@@ -398,7 +399,7 @@ Operate concurrently; fail independently; do not share a global clock
     * [Caches](http://www.lecloud.net/post/9246290032/scalability-for-dummies-part-3-cache)
     * [Asynchronism](http://www.lecloud.net/post/9699762917/scalability-for-dummies-part-4-asynchronism)
 
-Stateless: Every server contains exactly the same codebase and does not store any user-related data, like sessions or profile pictures, on local disc or memory. 
+Stateless: Every server contains exactly **the same codebase and does not store any user-related data**, like sessions or profile pictures, on local disc or memory. 
 Sessions need to be stored in a centralized data store which is accessible to all your application servers. It can be an external database or an external persistent cache, like Redis. 
 
 #### Asynchronism
@@ -409,14 +410,14 @@ This pre-computing of overall general data can extremely improve websites and we
 A user comes to your website and starts a very computing intensive task which would take several minutes to finish. So the frontend of your website sends a job onto a job queue and immediately signals back to the user: your job is in work, please continue to the browse the page. The job queue is constantly checked by a bunch of workers for new jobs. If there is a new job then the worker does the job and after some minutes sends a signal that the job was done. The frontend, which constantly checks for new “job is done” - signals, sees that the job was done and informs the user about it. I know, that was a very simplified example. 
 RabbitMQ is one of many systems which help to implement async processing. You could also use ActiveMQ or a simple Redis list.
 
-There are two major bottlenecks of the whole system – requests per second (rps) and bandwidth. We could improve the situation by using more efficient tech stack, like frameworks with async and non-blocking reactor pattern, and enhancing the hardware, like scaling up (aka vertical scaling) or scaling out (aka horizontal scaling).
+There are two major bottlenecks of the whole system – **requests per second (rps)** and **bandwidth**. We could improve the situation by using more efficient tech stack, like frameworks with async and non-blocking reactor pattern, and enhancing the hardware, like scaling up (aka vertical scaling) or scaling out (aka horizontal scaling).
 Internet companies prefer scaling out, since it is more cost-efficient with a huge number of commodity machines. 
 Frontend web tier and service tier must be stateless in order to add or remove hosts conveniently, thus achieving horizontal scalability.
 
-The single responsibility principle advocates small and autonomous services that work together, so that each service can do one thing well and not block others.
+The **single responsibility principle** advocates small and autonomous services that work together, so that each service can do one thing well and not block others.
 
 #### Service Discovery
- Zookeeper is a popular and centralized choice. Instances with name, address, port, etc. are registered into the path in ZooKeeper for each service. If one service does not know where to find another service, it can query Zookeeper for the location and memorize it until that location is unavailable.
+ Zookeeper is a popular and centralized choice. **Instances with name, address, port, etc. are registered into the path** in ZooKeeper for each service. If one service does not know where to find another service, it can query Zookeeper for the location and memorize it until that location is unavailable.
 Zookeeper is a CP system in terms of CAP theorem, which means it stays consistent in the case of failures, but the leader of the centralized consensus will be unavailable for registering new services.
 
 #### Micro Services
@@ -571,7 +572,7 @@ This topic is further discussed in the [Database](#database) section:
 
 A Domain Name System (DNS) translates a domain name such as www.example.com to an IP address.
 
-DNS is hierarchical, with a few authoritative servers at the top level.  Your router or ISP provides information about which DNS server(s) to contact when doing a lookup.  Lower level DNS servers cache mappings, which could become stale due to DNS propagation delays.  DNS results can also be cached by your browser or OS for a certain period of time, determined by the [time to live (TTL)](https://en.wikipedia.org/wiki/Time_to_live).
+DNS is hierarchical, with a few authoritative servers at the top level.  Your router or ISP provides information about which DNS server(s) to contact when doing a lookup.  **Lower level DNS servers cache mappings**, which could become stale due to DNS propagation delays.  DNS results can also be **cached by your browser or OS** for a certain period of time, determined by the [time to live (TTL)](https://en.wikipedia.org/wiki/Time_to_live).
 
 * **NS record (name server)** - Specifies the DNS servers for your domain/subdomain.
 * **MX record (mail exchange)** - Specifies the mail servers for accepting messages.
@@ -607,7 +608,7 @@ Services such as [CloudFlare](https://www.cloudflare.com/dns/) and [Route 53](ht
   <i><a href=https://www.creative-artworks.eu/why-use-a-content-delivery-network-cdn/>Source: Why use a CDN</a></i>
 </p>
 
-A content delivery network (CDN) is a globally distributed network of proxy servers, serving content from locations closer to the user.  Generally, static files such as HTML/CSS/JS, photos, and videos are served from CDN, although some CDNs such as Amazon's CloudFront support dynamic content.  The site's DNS resolution will tell clients which server to contact.
+A content delivery network (CDN) is a **globally distributed network of proxy servers, serving content from locations closer to the user**.  Generally, static files such as HTML/CSS/JS, photos, and videos are served from CDN, although some CDNs such as Amazon's CloudFront support dynamic content.  The site's DNS resolution will tell clients which server to contact.
 
 Serving content from CDNs can significantly improve performance in two ways:
 
@@ -622,9 +623,9 @@ Sites with a small amount of traffic or sites with content that isn't often upda
 
 ### Pull CDNs
 
-Pull CDNs grab new content from your server when the first user requests the content.  You leave the content on your server and rewrite URLs to point to the CDN.  This results in a slower request until the content is cached on the CDN.
+Pull CDNs grab new content from your server when the first user requests the content.  You leave the content on your server and rewrite URLs to point to the CDN.  This results in **a slower request until the content is cached on the CDN**.
 
-A [time-to-live (TTL)](https://en.wikipedia.org/wiki/Time_to_live) determines how long content is cached.  Pull CDNs minimize storage space on the CDN, but can create redundant traffic if files expire and are pulled before they have actually changed.
+A [time-to-live (TTL)](https://en.wikipedia.org/wiki/Time_to_live) determines how long content is cached.  Pull CDNs **minimize storage space on the CDN, but can create redundant traffic if files expire and are pulled before they have actually changed**.
 
 Sites with heavy traffic work well with pull CDNs, as traffic is spread out more evenly with only recently-requested content remaining on the CDN.
 
@@ -647,15 +648,15 @@ Sites with heavy traffic work well with pull CDNs, as traffic is spread out more
   <br/>
   <i><a href=http://horicky.blogspot.com/2010/10/scalable-system-design-patterns.html>Source: Scalable system design patterns</a></i>
 </p>
-performance, reliability, security, and scale
+
 Load balancing is the process of spreading requests across multiple resources according to some metric (random, round-robin, random with weighting for machine capacity, etc) and their current status (available for requests, not responding, elevated error rate, etc).
-Load balancers are most commonly deployed when a site needs multiple servers because the volume of requests is too much for a single server to handle efficiently. Deploying multiple servers also eliminates a single point of failure, making the website more reliable. Most commonly, the servers all host the same content, and the load balancer’s job is to distribute the workload in a way that makes the best use of each server’s capacity, prevents overload on any server, and results in the fastest possible response to the client.
+Load balancers are most commonly deployed when a site needs multiple servers because **the volume of requests is too much for a single server** to handle efficiently. Deploying multiple servers also **eliminates a single point of failure**, making the website more reliable. Most commonly, the servers all host the same content, and the load balancer’s job is to distribute the workload in a way that makes the best use of each server’s capacity, prevents overload on any server, and results in the fastest possible response to the client.
 
 Load balancers distribute incoming client requests to computing resources such as application servers and databases.  In each case, the load balancer returns the response from the computing resource to the appropriate client.  Load balancers are effective at:
 
-* Preventing requests from going to unhealthy servers
-* Preventing overloading resources
-* Helping eliminate single points of failure
+* **Preventing requests from going to unhealthy servers**
+* **Preventing overloading resources**
+* **Helping eliminate single points of failure**
 
 Load balancers can be implemented with hardware (expensive) or with software such as HAProxy.
 
